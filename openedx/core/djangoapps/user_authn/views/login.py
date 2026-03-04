@@ -7,8 +7,6 @@ Much of this file was broken out from views.py, previous history can be found th
 import hashlib
 import json
 import logging
-import re
-import urllib
 
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
@@ -29,7 +27,7 @@ from edx_django_utils.monitoring import set_custom_attribute
 from eventtracking import tracker
 from openedx_events.learning.data import UserData, UserPersonalData
 from openedx_events.learning.signals import SESSION_LOGIN_COMPLETED
-from openedx_filters.learning.filters import StudentLoginRequested
+from openedx_filters.learning.filters import PostLoginRedirectURLRequested, StudentLoginRequested
 from rest_framework import status
 from rest_framework.views import APIView
 
@@ -56,10 +54,9 @@ from openedx.core.djangoapps.user_authn.toggles import (
 )
 from openedx.core.djangoapps.user_authn.views.login_form import get_login_session_form
 from openedx.core.djangoapps.user_authn.views.password_reset import send_password_reset_email_for_user
-from openedx.core.djangoapps.user_authn.views.utils import API_V1, ENTERPRISE_ENROLLMENT_URL_REGEX, UUID4_REGEX
+from openedx.core.djangoapps.user_authn.views.utils import API_V1
 from openedx.core.djangoapps.util.user_messages import PageLevelMessages
 from openedx.core.djangolib.markup import HTML, Text
-from openedx.features.enterprise_support.api import activate_learner_enterprise, get_enterprise_learner_data_from_api
 
 log = logging.getLogger("edx.student")
 AUDIT_LOG = logging.getLogger("audit")
@@ -477,35 +474,6 @@ def finish_auth(request):
     )
 
 
-def enterprise_selection_page(request, user, next_url):
-    """
-    Updates redirect url to enterprise selection page if user is associated
-    with multiple enterprises otherwise return the next url.
-
-    param:
-      next_url(string): The URL to redirect to after multiple enterprise selection or in case
-      the selection page is bypassed e.g when dealing with direct enrolment urls.
-    """
-    redirect_url = next_url
-
-    response = get_enterprise_learner_data_from_api(user)
-    if response and len(response) > 1:
-        redirect_url = reverse("enterprise_select_active") + "/?success_url=" + urllib.parse.quote(next_url)
-
-        # Check to see if next url has an enterprise in it. In this case if user is associated with
-        # that enterprise, activate that enterprise and bypass the selection page.
-        if re.match(ENTERPRISE_ENROLLMENT_URL_REGEX, urllib.parse.unquote(next_url)):
-            enterprise_in_url = re.search(UUID4_REGEX, next_url).group(0)
-            for enterprise in response:
-                if enterprise_in_url == str(enterprise["enterprise_customer"]["uuid"]):
-                    is_activated_successfully = activate_learner_enterprise(request, user, enterprise_in_url)
-                    if is_activated_successfully:
-                        redirect_url = next_url
-                    break
-
-    return redirect_url
-
-
 @ensure_csrf_cookie
 @require_http_methods(["POST"])
 @ratelimit(
@@ -647,9 +615,14 @@ def login_user(request, api_version="v1"):  # pylint: disable=too-many-statement
             redirect_url = finish_auth_url
         elif should_redirect_to_authn_microfrontend():
             next_url, root_url = get_next_url_for_login_page(request, include_host=True)
-            redirect_url = get_redirect_url_with_host(
-                root_url, enterprise_selection_page(request, possibly_authenticated_user, finish_auth_url or next_url)
+            # .. filter_implemented_name: PostLoginRedirectURLRequested
+            # .. filter_type: org.openedx.learning.auth.post_login.redirect_url.requested.v1
+            post_login_redirect_url, __, __ = PostLoginRedirectURLRequested.run_filter(
+                redirect_url=finish_auth_url or next_url,
+                user=possibly_authenticated_user,
+                next_url=finish_auth_url or next_url,
             )
+            redirect_url = get_redirect_url_with_host(root_url, post_login_redirect_url)
 
         if (
             settings.ENABLE_AUTHN_LOGIN_NUDGE_HIBP_POLICY

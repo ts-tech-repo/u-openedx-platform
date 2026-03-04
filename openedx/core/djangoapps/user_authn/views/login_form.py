@@ -13,6 +13,12 @@ from django.utils.translation import gettext as _
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 from django_ratelimit.decorators import ratelimit
+from openedx_filters.learning.filters import (
+    LoginFormTPAOverridesRequested,
+    LogistrationContextRequested,
+    LogistrationMFERedirectRequested,
+    LogistrationResponseRendered,
+)
 
 from common.djangoapps import third_party_auth
 from common.djangoapps.edxmako.shortcuts import render_to_response
@@ -32,46 +38,38 @@ from openedx.core.djangoapps.user_authn.toggles import (
 from openedx.core.djangoapps.user_authn.views.password_reset import get_password_reset_form
 from openedx.core.djangoapps.user_authn.views.registration_form import RegistrationFormFactory
 from openedx.core.djangoapps.user_authn.views.utils import third_party_auth_context
-from openedx.features.enterprise_support.api import enterprise_customer_for_request, enterprise_enabled
-from openedx.features.enterprise_support.utils import (
-    get_enterprise_slug_login_url,
-    handle_enterprise_cookies_for_logistration,
-    update_logistration_context_for_enterprise,
-)
 
 log = logging.getLogger(__name__)
 
 
 def _apply_third_party_auth_overrides(request, form_desc):
     """Modify the login form if the user has authenticated with a third-party provider.
-    If a user has successfully authenticated with a third-party provider,
-    and an email is associated with it then we fill in the email field with readonly property.
+
+    If a third-party-auth pipeline is running for the request, pipeline steps of the
+    LoginFormTPAOverridesRequested filter may override login form field properties
+    (e.g. pre-fill the email field) based on the running pipeline and its provider.
+
     Arguments:
-        request (HttpRequest): The request for the registration form, used
+        request (HttpRequest): The request for the login form, used
             to determine if the user has successfully authenticated
             with a third-party provider.
-        form_desc (FormDescription): The registration form description
+        form_desc (FormDescription): The login form description
+
+    Returns:
+        FormDescription: the (possibly modified) login form description
     """
     if third_party_auth.is_enabled():
         running_pipeline = third_party_auth.pipeline.get(request)
         if running_pipeline:
             current_provider = third_party_auth.provider.Registry.get_from_pipeline(running_pipeline)
-            if current_provider and enterprise_customer_for_request(request):
-                pipeline_kwargs = running_pipeline.get('kwargs')
-
-                # Details about the user sent back from the provider.
-                details = pipeline_kwargs.get('details')
-                email = details.get('email', '')
-
-                # override the email field.
-                form_desc.override_field_properties(
-                    "email",
-                    default=email,
-                    restrictions={"readonly": "readonly"} if email else {
-                        "min_length": accounts.EMAIL_MIN_LENGTH,
-                        "max_length": accounts.EMAIL_MAX_LENGTH,
-                    }
-                )
+            # .. filter_implemented_name: LoginFormTPAOverridesRequested
+            # .. filter_type: org.openedx.learning.login.form.tpa_overrides.requested.v1
+            form_desc, *_ = LoginFormTPAOverridesRequested.run_filter(
+                form_desc=form_desc,
+                running_pipeline=running_pipeline,
+                current_provider=current_provider,
+            )
+    return form_desc
 
 
 def get_login_session_form(request):
@@ -89,7 +87,10 @@ def get_login_session_form(request):
 
     """
     form_desc = FormDescription("post", reverse("user_api_login_session", kwargs={'api_version': 'v1'}))
-    _apply_third_party_auth_overrides(request, form_desc)
+
+    # Field property overrides applied by pipeline steps take effect when the fields are
+    # added below, so the overrides must be applied before the fields are added.
+    form_desc = _apply_third_party_auth_overrides(request, form_desc)
 
     # Translators: This label appears above a field on the login form
     # meant to hold the user's email address.
@@ -188,11 +189,12 @@ def login_and_registration_form(request, initial_mode="login"):
 
     # Redirect to authn MFE if it is enabled
     # AND
-    #   user is not an enterprise user
-    # AND
     #   tpa_hint_provider is not available
     # AND
-    #   user is not coming from a SAML IDP.
+    #   user is not coming from a SAML IDP
+    # AND
+    #   no pipeline step prevents the redirect (e.g. because the legacy page must be
+    #   rendered with customized content).
     saml_provider = False
     running_pipeline = pipeline.get(request)
     if running_pipeline:
@@ -200,26 +202,27 @@ def login_and_registration_form(request, initial_mode="login"):
             running_pipeline.get('backend'), running_pipeline.get('kwargs')
         )
 
-    enterprise_customer = enterprise_customer_for_request(request)
+    if should_redirect_to_authn_microfrontend() and not tpa_hint_provider and not saml_provider:
+        try:
+            # .. filter_implemented_name: LogistrationMFERedirectRequested
+            # .. filter_type: org.openedx.learning.logistration.mfe.redirect.requested.v1
+            LogistrationMFERedirectRequested.run_filter(request=request)
+        except LogistrationMFERedirectRequested.PreventRedirect:
+            pass  # Render the legacy logistration page below.
+        else:
+            # This is to handle a case where a logged-in cookie is not present but the user is authenticated.
+            # Note: If we don't handle this learner is redirected to authn MFE and then back to dashboard
+            # instead of the desired redirect URL (e.g. finish_auth) resulting in learners not enrolling
+            # into the courses.
+            if request.user.is_authenticated and redirect_to:
+                return redirect(redirect_to)
 
-    if should_redirect_to_authn_microfrontend() and \
-            not enterprise_customer and \
-            not tpa_hint_provider and \
-            not saml_provider:
-
-        # This is to handle a case where a logged-in cookie is not present but the user is authenticated.
-        # Note: If we don't handle this learner is redirected to authn MFE and then back to dashboard
-        # instead of the desired redirect URL (e.g. finish_auth) resulting in learners not enrolling
-        # into the courses.
-        if request.user.is_authenticated and redirect_to:
-            return redirect(redirect_to)
-
-        query_params = request.GET.urlencode()
-        url_path = '/{}{}'.format(
-            initial_mode,
-            '?' + query_params if query_params else ''
-        )
-        return redirect(settings.AUTHN_MICROFRONTEND_URL + url_path)
+            query_params = request.GET.urlencode()
+            url_path = '/{}{}'.format(
+                initial_mode,
+                '?' + query_params if query_params else ''
+            )
+            return redirect(settings.AUTHN_MICROFRONTEND_URL + url_path)
 
     # Account activation message
     account_activation_messages = [
@@ -260,8 +263,6 @@ def login_and_registration_form(request, initial_mode="login"):
                 'ALLOW_PUBLIC_ACCOUNT_CREATION', settings.FEATURES.get('ALLOW_PUBLIC_ACCOUNT_CREATION', True)),
             'register_links_allowed': settings.FEATURES.get('SHOW_REGISTRATION_LINKS', True),
             'is_account_recovery_feature_enabled': is_secondary_email_feature_enabled(),
-            'enterprise_slug_login_url': get_enterprise_slug_login_url(),
-            'is_enterprise_enable': enterprise_enabled(),
             'is_require_third_party_auth_enabled': is_require_third_party_auth_enabled(),
             'enable_coppa_compliance': settings.ENABLE_COPPA_COMPLIANCE,
             'edx_user_info_cookie_name': settings.EDXMKTG_USER_INFO_COOKIE_NAME,
@@ -277,11 +278,15 @@ def login_and_registration_form(request, initial_mode="login"):
         ),
     }
 
-    update_logistration_context_for_enterprise(request, context, enterprise_customer)
+    # .. filter_implemented_name: LogistrationContextRequested
+    # .. filter_type: org.openedx.learning.logistration.context.requested.v1
+    context = LogistrationContextRequested.run_filter(context=context)
 
     response = render_to_response('student_account/login_and_register.html', context)
-    handle_enterprise_cookies_for_logistration(request, response, context)
 
+    # .. filter_implemented_name: LogistrationResponseRendered
+    # .. filter_type: org.openedx.learning.logistration.response.rendered.v1
+    response, __ = LogistrationResponseRendered.run_filter(response=response, context=context)
     return response
 
 

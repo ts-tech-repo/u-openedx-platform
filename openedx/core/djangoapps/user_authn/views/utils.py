@@ -23,8 +23,6 @@ from openedx.core.djangoapps.site_configuration import helpers as configuration_
 
 log = logging.getLogger(__name__)
 API_V1 = 'v1'
-UUID4_REGEX = '[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
-ENTERPRISE_ENROLLMENT_URL_REGEX = fr'/enterprise/{UUID4_REGEX}/course/{settings.COURSE_KEY_REGEX}/enroll'
 
 
 def third_party_auth_context(request, redirect_to, tpa_hint=None):

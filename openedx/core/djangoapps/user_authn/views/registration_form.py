@@ -18,6 +18,7 @@ from django.urls import reverse
 from django.utils.translation import gettext as _
 from django_countries import countries
 from eventtracking import tracker
+from openedx_filters.learning.filters import RegistrationFormTPAOverridesRequested
 
 from common.djangoapps import third_party_auth
 from common.djangoapps.edxmako.shortcuts import marketing_link
@@ -36,7 +37,6 @@ from openedx.core.djangoapps.user_authn.utils import check_pwned_password
 from openedx.core.djangoapps.user_authn.utils import is_registration_api_v1 as is_api_v1
 from openedx.core.djangoapps.user_authn.views.utils import remove_disabled_country_from_list
 from openedx.core.djangolib.markup import HTML, Text
-from openedx.features.enterprise_support.api import enterprise_customer_for_request
 
 log = logging.getLogger(__name__)
 
@@ -581,7 +581,11 @@ class RegistrationFormFactory:
         """
         self.request = request
         form_desc = FormDescription("post", self._get_registration_submit_url(request))
-        self._apply_third_party_auth_overrides(request, form_desc)
+
+        # Field property overrides applied by third-party-auth pipeline steps take effect
+        # when the fields are added below, so the overrides must be applied before the
+        # field loop.
+        form_desc = self._apply_third_party_auth_overrides(request, form_desc)
 
         # Custom form fields can be added via the form set in settings.PROFILE_EXTENSION_FORM
         # (or deprecated settings.REGISTRATION_EXTENSION_FORM)
@@ -1298,11 +1302,15 @@ class RegistrationFormFactory:
         This will also hide the password field, since we assign users a default
         (random) password on the assumption that they will be using
         third-party auth to log in.
+        Finally, pipeline steps of the RegistrationFormTPAOverridesRequested filter may
+        apply further overrides based on the running pipeline and its provider.
         Arguments:
             request (HttpRequest): The request for the registration form, used
                 to determine if the user has successfully authenticated
                 with a third-party provider.
             form_desc (FormDescription): The registration form description
+        Returns:
+            FormDescription: the (possibly modified) registration form description
         """
         # pylint: disable=too-many-nested-blocks
         if third_party_auth.is_enabled():
@@ -1316,15 +1324,7 @@ class RegistrationFormFactory:
                         running_pipeline.get('kwargs')
                     )
 
-                    # When the TPA Provider is configured to skip the registration form and we are in an
-                    # enterprise context, we need to hide all fields except for terms of service and
-                    # ensure that the user explicitly checks that field.
-                    # pylint: disable=consider-using-ternary
-                    hide_registration_fields_except_tos = (
-                        (
-                            current_provider.skip_registration_form and enterprise_customer_for_request(request)
-                        ) or current_provider.sync_learner_profile_data
-                    )
+                    hide_registration_fields_except_tos = current_provider.sync_learner_profile_data
 
                     for field_name in self.DEFAULT_FIELDS + self.EXTRA_FIELDS:
                         if field_name not in field_overrides:
@@ -1392,3 +1392,13 @@ class RegistrationFormFactory:
                         default=current_provider.name if current_provider.name else "Third Party",
                         required=False,
                     )
+
+                # .. filter_implemented_name: RegistrationFormTPAOverridesRequested
+                # .. filter_type: org.openedx.learning.registration.form.tpa_overrides.requested.v1
+                form_desc, *_ = RegistrationFormTPAOverridesRequested.run_filter(
+                    form_desc=form_desc,
+                    running_pipeline=running_pipeline,
+                    current_provider=current_provider,
+                )
+
+        return form_desc
