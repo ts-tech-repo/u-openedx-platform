@@ -241,7 +241,7 @@ def extras_course_enroll_user(request, enroll="1"):
             "already_enrolled": already_enrolled,
             "generated_password": (
                 password
-                if generated_password
+                if generated_password and not is_unenroll and not bool(failed)
                 else None
             ),
         },

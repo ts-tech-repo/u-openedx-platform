@@ -13,7 +13,7 @@ from common.djangoapps.util.password_policy_validators import validate_password
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangoapps.user_authn.views.registration_form import AccountCreationForm
 
-from lms.djangoapps.discussion import settings
+from django.conf import settings
 from common.djangoapps.student.models import CourseEnrollment
 from opaque_keys.edx.keys import CourseKey
 

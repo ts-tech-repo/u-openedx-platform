@@ -285,6 +285,8 @@ REPO_ROOT = PROJECT_ROOT.dirname()
 COMMON_ROOT = REPO_ROOT / "common"
 OPENEDX_ROOT = REPO_ROOT / "openedx"
 CMS_ROOT = REPO_ROOT / "cms"
+CUSTOM_CMS_ROOT = REPO_ROOT / "custom_cms"
+CUSTOM_COMMON_ROOT = REPO_ROOT / "custom_common"
 LMS_ROOT = REPO_ROOT / "lms"
 ENV_ROOT = REPO_ROOT.dirname()  # virtualenv dir /edx-platform is in
 COURSES_ROOT = ENV_ROOT / "data"
@@ -319,6 +321,9 @@ MAKO_TEMPLATE_DIRS_BASE = [
     OPENEDX_ROOT / 'core' / 'djangoapps' / 'dark_lang' / 'templates',
     OPENEDX_ROOT / 'core' / 'lib' / 'license' / 'templates',
     CMS_ROOT / 'djangoapps' / 'pipeline_js' / 'templates',
+    CUSTOM_COMMON_ROOT / 'templates',
+    CUSTOM_CMS_ROOT / 'templates',
+    
 ]
 
 CONTEXT_PROCESSORS = (

@@ -10,7 +10,7 @@ urlpatterns = [
     ),
     
     path(
-        "user/access/",
+        "user/access",
         views.extras_course_enroll_user,
         name="custom-course-enroll-user-default",
     ),
