@@ -16,6 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from edx_rest_framework_extensions.auth.jwt.authentication import JwtAuthentication
 from edx_rest_framework_extensions.permissions import NotJwtRestrictedApplication
 
+from custom_common.deteministic_safe_aes import encrypt
 from openedx.core.djangoapps.enrollments.api import add_enrollment
 from openedx.core.djangoapps.enrollments.errors import CourseEnrollmentExistsError
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
@@ -143,6 +144,7 @@ def extras_course_enroll_user(request, enroll="1"):
 
     user = User.objects.filter(email=email).first()
     generated_password = False
+    generated_username = False
 
     if user:
         log.info("Existing user found | user_id=%s", user.id)
@@ -159,12 +161,13 @@ def extras_course_enroll_user(request, enroll="1"):
 
         if not username:
             username = generate_username(email)
+            generated_username = True
             log.info("Generated username | username=%s", username)
 
         if not password:
             password = generate_random_password()
             generated_password = True
-            log.info("Generated temporary password | email=%s | password=%s", email, password)
+            log.info("Generated temporary password | email=%s | password=%s", email, encrypt(password))
 
         user = create_user(
             username=username,
@@ -231,20 +234,23 @@ def extras_course_enroll_user(request, enroll="1"):
 
     else:
         log.info("Enrollment email disabled | config_key=%s", config_key)
+        
+    data = {}
+
+    if failed:
+        data["error_details"] = failed
+        
+    elif not is_unenroll:
+        if generated_username:
+            data["user_details"]["generated_username"] = username
+        if generated_password:
+            data["user_details"]["generated_password"] = password
+        
 
     response = {
         "error": bool(failed),
-        "message": "Processed enrollment request",
-        "data": {
-            "success": success,
-            "failed": failed,
-            "already_enrolled": already_enrolled,
-            "generated_password": (
-                password
-                if generated_password and not is_unenroll and not bool(failed)
-                else None
-            ),
-        },
+        "message": "success" if not failed else "failed",
+        "data": data
     }
 
     log.info("Enrollment request completed | user_id=%s success=%s failed=%s", user.id, len(success), len(failed))

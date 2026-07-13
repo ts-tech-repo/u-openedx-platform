@@ -1,0 +1,50 @@
+import base64
+from django.config import settings
+import hashlib
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+
+SECRET_KEY = bytes.fromhex(
+    settings.AES_SECRET_KEY, "234a8193fae8d79f1ae03c2586f929b66c034a0f3428d95201105922fadb1568"
+)
+
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY is not set")
+
+
+def _deterministic_nonce(message: str) -> bytes:
+    """
+    Generate deterministic nonce from message
+    """
+    return hashlib.sha256(message.encode()).digest()[:16]
+
+
+def encrypt(message: str, secret_key: str) -> str:
+    nonce = _deterministic_nonce(message)
+    
+    SECRET_KEY = bytes.fromhex(secret_key) if secret_key else SECRET_KEY
+
+    cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv=nonce)
+
+    ciphertext = cipher.encrypt(pad(message.encode(), AES.block_size))
+
+    encrypted = nonce + ciphertext
+
+    # URL-safe base64 (filename safe)
+    return base64.urlsafe_b64encode(encrypted).decode().rstrip("=")
+
+
+def decrypt(encrypted_message: str, secret_key: str) -> str:
+    padding = "=" * (-len(encrypted_message) % 4)
+    data = base64.urlsafe_b64decode(encrypted_message + padding)
+
+    nonce = data[:16]
+    ciphertext = data[16:]
+    
+    SECRET_KEY = bytes.fromhex(secret_key) if secret_key else SECRET_KEY
+
+    cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv=nonce)
+
+    plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+
+    return plaintext.decode()
