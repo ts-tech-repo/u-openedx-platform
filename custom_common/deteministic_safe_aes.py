@@ -1,17 +1,30 @@
 import base64
-from django.conf import settings
 import hashlib
+
+from django.conf import settings
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
-SECRET_KEY = getattr(
+
+DEFAULT_AES_KEY = "234a8193fae8d79f1ae03c2586f929b66c034a0f3428d95201105922fadb1568"
+
+AES_SECRET_KEY = getattr(
     settings,
     "AES_SECRET_KEY",
-    "234a8193fae8d79f1ae03c2586f929b66c034a0f3428d95201105922fadb1568",
+    DEFAULT_AES_KEY,
 )
 
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY is not set")
+if not AES_SECRET_KEY:
+    raise ValueError("AES_SECRET_KEY is not configured")
+
+
+def _get_secret_key(secret_key=None):
+    """
+    Return AES key bytes.
+    """
+    key = secret_key or AES_SECRET_KEY
+
+    return bytes.fromhex(key)
 
 
 def _deterministic_nonce(message: str) -> bytes:
@@ -23,10 +36,10 @@ def _deterministic_nonce(message: str) -> bytes:
 
 def encrypt(message: str, secret_key: str = None) -> str:
     nonce = _deterministic_nonce(message)
-    
-    SECRET_KEY = bytes.fromhex(secret_key) if secret_key else SECRET_KEY
 
-    cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv=nonce)
+    key = _get_secret_key(secret_key)
+
+    cipher = AES.new(key, AES.MODE_CBC, iv=nonce)
 
     ciphertext = cipher.encrypt(pad(message.encode(), AES.block_size))
 
@@ -42,10 +55,10 @@ def decrypt(encrypted_message: str, secret_key: str = None) -> str:
 
     nonce = data[:16]
     ciphertext = data[16:]
-    
-    SECRET_KEY = bytes.fromhex(secret_key) if secret_key else SECRET_KEY
 
-    cipher = AES.new(SECRET_KEY, AES.MODE_CBC, iv=nonce)
+    key = _get_secret_key(secret_key)
+
+    cipher = AES.new(key, AES.MODE_CBC, iv=nonce)
 
     plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
 

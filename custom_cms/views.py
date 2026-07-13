@@ -167,7 +167,7 @@ def extras_course_enroll_user(request, enroll="1"):
         if not password:
             password = generate_random_password()
             generated_password = True
-            log.info("Generated temporary password | email=%s | password=%s", email, encrypt(password))
+            log.info("Generated temporary password | email=%s | encrypted_password=%s", email, encrypt(password))
 
         user = create_user(
             username=username,
