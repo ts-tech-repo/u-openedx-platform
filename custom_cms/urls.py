@@ -10,9 +10,15 @@ urlpatterns = [
     ),
     
     path(
+        "user/access/",
+        views.extras_course_enroll_user,
+        name="custom-course-enroll-user-default",
+    ),
+
+    path(
         "user/access/<str:enroll>",
         views.extras_course_enroll_user,
-        name="custom-course-enroll-user"
+        name="custom-course-enroll-user",
     ),
     path('', include('custom_common.urls')),
 ]
