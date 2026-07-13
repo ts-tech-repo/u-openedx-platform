@@ -4,15 +4,21 @@ account creation
 """
 
 
+from collections import Counter
+import json
 import logging
+import string
 import unicodedata
 
 from django.contrib.auth.password_validation import MinimumLengthValidator as DjangoMinimumLengthValidator
 from django.contrib.auth.password_validation import get_default_password_validators
 from django.contrib.auth.password_validation import validate_password as django_validate_password
+from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
+from common.djangoapps.util.models import PasswordValidationDictionary as _PasswordValidationDictionary
+from zxcvbn import zxcvbn
 
 log = logging.getLogger(__name__)
 
@@ -449,6 +455,11 @@ class SymbolValidator:
     def validate(self, password, user=None):  # lint-amnesty, pylint: disable=unused-argument
         if _validate_condition(password, lambda c: 'S' in unicodedata.category(c), self.min_symbol):
             return
+
+        # If symbols fails, fall back to PunctuationValidator check
+        if _validate_condition(password, lambda c: 'P' in unicodedata.category(c), self.min_symbol):
+            return
+
         raise ValidationError(
             ngettext(
                 'This password must contain at least %(min_symbol)d symbol.',
@@ -481,3 +492,171 @@ class SymbolValidator:
         Returns a key, value pair for the restrictions related to the Validator
         """
         return 'min_symbol', self.min_symbol
+
+
+class CombinationValidator:
+    """
+    Ensure the password contains at least one character from three of the four categories:
+    - Numeric (0–9)
+    - Lowercase (a–z)
+    - Uppercase (A–Z)
+    - Special characters
+    """
+
+    def __init__(self, min_categories=3):
+        self.min_categories = min_categories
+
+    def validate(self, password, user=None):
+        categories = {
+            'numeric': any(c.isdigit() for c in password),
+            'lowercase': any(c.islower() for c in password),
+            'uppercase': any(c.isupper() for c in password),
+            'special': any(c in string.punctuation for c in password),
+        }
+
+        if sum(categories.values()) < self.min_categories:
+            raise ValidationError(
+                _("This password must contain characters from at least three of the four categories: "
+                  "lowercase, uppercase, numeric, and special characters."),
+                code='password_too_simple',
+            )
+
+    def get_help_text(self):
+        return _("Your password must contain at least one character from three of the four categories: "
+                 "lowercase (a-z), uppercase (A-Z), numeric (0-9), and special characters (!@#$%^&*).")
+
+
+
+class PreviousPasswordValidator:
+    """
+    Ensures that the new password is not the same as the user's last password.
+    """
+
+    def validate(self, password, user=None):
+        if user and user.password:
+            if check_password(password, user.password):
+                raise ValidationError(
+                    _("Your new password cannot be the same as your last password."),
+                    code='password_no_reuse',
+                )
+
+    def get_help_text(self):
+        return _("You must use a different password than your last one.")
+
+
+class CommonDictionaryWordsValidator:
+    """
+    Validate that the password is not a common password.
+
+    The password is rejected if it occurs in a provided list of passwords
+    from PasswordValidationDictionary model. It checks if the given
+    password (or its reverse) exists in the database.
+    """
+    def validate(self, password, user=None):
+        # Run the zxcvbn password strength estimator
+        result = zxcvbn(password)
+        score = result.get('score')
+        feedback = result.get('feedback', {})
+
+        # Extract warning and suggestions from feedback
+        warning = feedback.get('warning', '')
+        suggestions = feedback.get('suggestions', [])
+
+        # Log the validation result
+        log.info("Password validation result for '%s': %s", password, result)
+
+        # Raise validation error if score is less than or equal to 3
+        if score <= 3:
+            raise ValidationError({
+                'password_policy_violation': json.dumps({
+                    'message': _("This password is too similar to a common password and has been blocked for security reasons."),
+                    'warning': warning,
+                    'suggestions': suggestions
+                })
+            })
+
+
+    def get_help_text(self):
+        return "Your password cannot be a commonly used password or its reverse."
+
+class EnhancedUserAttributeSimilarityValidator:
+    """
+    Custom validator that ensures the password does not contain parts of the user's attributes
+    (username, first name, last name) even if they are slightly modified or reversed.
+    """
+
+    DEFAULT_USER_ATTRIBUTES = ("username", "first_name", "last_name", "email")
+
+    def __init__(self, user_attributes=None):
+        self.user_attributes = user_attributes or self.DEFAULT_USER_ATTRIBUTES
+
+    def get_n_length_substrings(self, s, n=4):
+        """Generate all possible substrings of length n from the given string."""
+        if len(s) < n:
+            return set()
+        return {s[i:i+n] for i in range(len(s) - n + 1)}
+
+    def validate(self, password, user=None):
+        if user:
+            password = password.lower()  # Normalize password case
+            user_values = list(filter(None, [str(getattr(user, attr, "")).lower() for attr in self.user_attributes]))
+
+            if not user_values:
+                return
+
+            four_char_substrings = set()
+            for value in user_values:
+                    substrings_values = self.get_n_length_substrings(value)
+                    four_char_substrings.update(substrings_values)
+                    four_char_substrings.update({sub[::-1] for sub in substrings_values})
+
+            if any(sub in password for sub in four_char_substrings):
+                        raise ValidationError(
+                            _("Your password cannot contain parts of your personal details (forward or reversed)."),
+                            code='password_too_similar',
+                        )
+
+    def get_help_text(self):
+        return _("Your password cannot contain parts of your username, first name, or last name, even with special characters or in reverse order.")
+
+
+class UniqueCharactersValidator:
+    """
+    Ensures that the password contains at least a minimum number of unique characters.
+    """
+
+    def __init__(self, min_unique=4):
+        self.min_unique = min_unique
+
+    def validate(self, password, user=None):
+        unique_chars = set(password)
+        if len(unique_chars) < self.min_unique:
+            raise ValidationError(
+                _(f"Your password must contain at least {self.min_unique} unique characters."),
+                code="password_too_few_unique_chars",
+            )
+
+    def get_help_text(self):
+        return _(f"Your password must contain at least {self.min_unique} unique characters.")
+
+
+class MaxCharacterOccurrenceValidator:
+    """
+    Ensures that no character in the password appears more than a specified number of times.
+    """
+
+    def __init__(self, max_occurrences=4):
+        self.max_occurrences = max_occurrences
+
+    def validate(self, password, user=None):
+        char_counts = Counter(password)
+        for char, count in char_counts.items():
+            if count > self.max_occurrences:
+                raise ValidationError(
+                    _(f"Your password cannot contain any character more than {self.max_occurrences} times."),
+                    code="password_too_many_repeated_chars",
+                )
+
+    def get_help_text(self):
+        return _(f"Your password cannot contain any character more than {self.max_occurrences} times.")
+

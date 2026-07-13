@@ -132,7 +132,10 @@ X_FRAME_OPTIONS = 'DENY'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "common.djangoapps.util.password_policy_validators.CombinationValidator",
+        "OPTIONS": {
+            "min_categories": 3
+        }
     },
     {
         "NAME": "common.djangoapps.util.password_policy_validators.MinimumLengthValidator",
@@ -141,12 +144,25 @@ AUTH_PASSWORD_VALIDATORS = [
         }
     },
     {
-        "NAME": "common.djangoapps.util.password_policy_validators.MaximumLengthValidator",
+        "NAME": "common.djangoapps.util.password_policy_validators.EnhancedUserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "common.djangoapps.util.password_policy_validators.PreviousPasswordValidator",
+    },
+    {
+        "NAME": "common.djangoapps.util.password_policy_validators.UniqueCharactersValidator",
         "OPTIONS": {
-            "max_length": 75
+            "min_unique": 4
         }
     },
+    {
+        "NAME": "common.djangoapps.util.password_policy_validators.MaxCharacterOccurrenceValidator",
+    },
+    {
+        "NAME": "common.djangoapps.util.password_policy_validators.CommonDictionaryWordsValidator",
+    },
 ]
+
 
 STORAGES = {
     'default': {
