@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import include, path
 from . import views
 
 
@@ -14,4 +14,5 @@ urlpatterns = [
         views.extras_course_enroll_user,
         name="custom-course-enroll-user"
     ),
+    path('', include('custom_common.urls')),
 ]

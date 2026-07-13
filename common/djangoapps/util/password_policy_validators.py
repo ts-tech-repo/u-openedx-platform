@@ -17,7 +17,6 @@ from django.contrib.auth.hashers import check_password
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
-from common.djangoapps.util.models import PasswordValidationDictionary as _PasswordValidationDictionary
 from zxcvbn import zxcvbn
 
 log = logging.getLogger(__name__)

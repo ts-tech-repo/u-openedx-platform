@@ -199,9 +199,18 @@ def send_enrollment_email(
         "email": user.email,
         "lms_root_url": lms_root_url,
     }
-
-    message = render_to_string(f"custom_cms/{template_name}", context)
-
+    
+    # check if template is available
+    message = ""
+    if template_name:
+        try:
+            message = render_to_string(f"{template_name}", context)
+        except Exception as e:
+            log.error(f"Template not found: {template_name}, {e}")
+            
+    if message == "":
+        raise Exception(f"Template not found: {template_name}")
+        
     send_mail(
         subject=subject,
         html_message=message,
