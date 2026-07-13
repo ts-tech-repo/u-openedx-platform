@@ -241,6 +241,7 @@ def extras_course_enroll_user(request, enroll="1"):
         data["error_details"] = failed
         
     elif not is_unenroll:
+        data["user_details"] = {}
         if generated_username:
             data["user_details"]["generated_username"] = username
         if generated_password:
