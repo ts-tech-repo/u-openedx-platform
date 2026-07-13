@@ -21,7 +21,7 @@ def _deterministic_nonce(message: str) -> bytes:
     return hashlib.sha256(message.encode()).digest()[:16]
 
 
-def encrypt(message: str, secret_key: str) -> str:
+def encrypt(message: str, secret_key: str = None) -> str:
     nonce = _deterministic_nonce(message)
     
     SECRET_KEY = bytes.fromhex(secret_key) if secret_key else SECRET_KEY
@@ -36,7 +36,7 @@ def encrypt(message: str, secret_key: str) -> str:
     return base64.urlsafe_b64encode(encrypted).decode().rstrip("=")
 
 
-def decrypt(encrypted_message: str, secret_key: str) -> str:
+def decrypt(encrypted_message: str, secret_key: str = None) -> str:
     padding = "=" * (-len(encrypted_message) % 4)
     data = base64.urlsafe_b64decode(encrypted_message + padding)
 
