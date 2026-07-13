@@ -1,4 +1,5 @@
 import logging
+import re
 import secrets
 import string
 
@@ -101,11 +102,7 @@ def generate_username(email: str) -> str:
 
     username = email.split("@")[0]
 
-    username = (
-        username
-        .replace(".", "_")
-        .replace(" ", "_")
-    )
+    username = re.sub(r'[^a-zA-Z0-9]', '_', username)
 
     return username[:30]
 
