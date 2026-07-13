@@ -4,9 +4,12 @@ import hashlib
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
-SECRET_KEY = bytes.fromhex(
-    settings.AES_SECRET_KEY, "234a8193fae8d79f1ae03c2586f929b66c034a0f3428d95201105922fadb1568"
-)
+if not settings.AES_SECRET_KEY or settings.AES_SECRET_KEY is None:
+    SECRET_KEY = bytes.fromhex(
+        "234a8193fae8d79f1ae03c2586f929b66c034a0f3428d95201105922fadb1568"
+    )
+else:
+    SECRET_KEY = settings.AES_SECRET_KEY
 
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY is not set")
