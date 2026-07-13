@@ -213,7 +213,7 @@ def extras_course_enroll_user(request, enroll="1"):
             send_enrollment_email(user, password, mail_details)
 
         except Exception as exc:
-            log.exception("Enrollment email failed | user_id=%s", user.id, exc_info=True)
+            log.exception("Enrollment email failed | user_id=%s | email=%s | error=%s", user.id, user.email, exc, exc_info=True)
             recipient_list = mail_details.get("support_emails", [])
             if not recipient_list:
                 recipient_list = [settings.CONTACT_EMAIL]

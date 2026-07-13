@@ -5,7 +5,7 @@ import string
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives, send_mail
 
 from common.djangoapps.edxmako.shortcuts import render_to_string
 from common.djangoapps.student.helpers import do_create_account
@@ -208,11 +208,11 @@ def send_enrollment_email(
     if message == "":
         raise Exception(f"Template not found: {template_name}")
         
-    send_mail(
+    email = EmailMultiAlternatives(
         subject=subject,
-        html_message=message,
+        body="",
         from_email=from_address,
-        recipient_list=[user.email],
+        to=[user.email],
         cc=mail_details.get(
             "cc_addresses",
             [],
@@ -221,6 +221,14 @@ def send_enrollment_email(
             "bcc_addresses",
             [],
         ),
+    )
+
+    email.attach_alternative(
+        message,
+        "text/html",
+    )
+
+    email.send(
         fail_silently=False,
     )
 
