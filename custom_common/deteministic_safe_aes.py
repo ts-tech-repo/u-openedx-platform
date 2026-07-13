@@ -1,5 +1,5 @@
 import base64
-from django.config import settings
+from django.conf import settings
 import hashlib
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
