@@ -2384,6 +2384,10 @@ INSTALLED_APPS = [
     "openedx_learning.apps.authoring.units",
     "openedx_learning.apps.authoring.subsections",
     "openedx_learning.apps.authoring.sections",
+    
+    # Custom Apps
+    "custom_lms",
+    "custom_common",
 ]
 
 ######################### Django Rest Framework ########################

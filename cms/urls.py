@@ -368,3 +368,11 @@ urlpatterns += [
     re_path('^authoring-api/ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     re_path('^authoring-api/schema/', SpectacularAPIView.as_view(), name='schema'),
 ]
+
+# Custom LMS
+urlpatterns += [
+    path(
+        "custom/cms/",
+        include("custom_cms.urls")
+    )
+]
