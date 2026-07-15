@@ -6,6 +6,7 @@ import string
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMultiAlternatives, send_mail
+import requests
 
 from common.djangoapps.edxmako.shortcuts import render_to_string
 from common.djangoapps.student.helpers import do_create_account
@@ -151,6 +152,10 @@ def generate_random_password(user: User | None = None) -> str:
 
         except ValidationError:
             continue
+import requests
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 
 def send_enrollment_email(
@@ -159,13 +164,15 @@ def send_enrollment_email(
     mail_details: dict,
 ) -> None:
     """
-    Send enrollment email to user.
+    Send enrollment email.
+
+    Priority:
+        1. Dashboard Notify API (if configured)
+        2. Django Email Backend (fallback)
     """
 
     subject = mail_details.get("subject")
-    template_name = mail_details.get(
-        "body_template_name",
-    )
+    template_name = mail_details.get("body_template_name")
 
     from_address = (
         mail_details.get("from_address")
@@ -196,31 +203,99 @@ def send_enrollment_email(
         "email": user.email,
         "lms_root_url": lms_root_url,
     }
-    
-    # check if template is available
-    message = ""
-    if template_name:
-        try:
-            message = render_to_string(f"{template_name}", context)
-        except Exception as e:
-            log.error(f"Template not found: {template_name}, {e}")
-            
-    if message == "":
-        raise Exception(f"Template not found: {template_name}")
-        
+
+    try:
+        message = render_to_string(template_name, context)
+    except Exception:
+        log.exception("Failed to render email template: %s", template_name)
+        raise
+
+    dashboard_url = configuration_helpers.get_value(
+        "DASHBOARD_URL",
+        getattr(settings, "DASHBOARD_URL", ""),
+        "https://dashboard.talentsprint.com",
+    )
+
+    notify_config = configuration_helpers.get_value(
+        "DASHBOARD_NOTIFY_USER",
+        getattr(settings, "DASHBOARD_NOTIFY_USER", {}),
+        {},
+    )
+
+    notify_password = notify_config.get("NOTIFY_PASSWORD")
+    notify_endpoint = notify_config.get("NOTIFY_USER_ENDPOINT")
+    retries = notify_config.get("RETRIES", 3)
+
+    use_notify_service = all(
+        [
+            dashboard_url,
+            notify_password,
+            notify_endpoint,
+        ]
+    )
+
+    if use_notify_service:
+        url = (
+            f"{dashboard_url.rstrip('/')}/"
+            f"{notify_endpoint.lstrip('/')}"
+        )
+
+        payload = {
+            "mail_recipient": [user.email],
+            "cc": mail_details.get("cc_addresses", []),
+            "bcc": mail_details.get("bcc_addresses", []),
+            "subject": subject,
+            "mail_content": message,
+            "from_email": from_address,
+            "NOTIFY_PASSWORD": notify_password,
+        }
+
+        for attempt in range(1, retries + 1):
+            try:
+                log.info(
+                    "Sending enrollment email via Notify API | "
+                    "user_id=%s | attempt=%s",
+                    user.id,
+                    attempt,
+                )
+
+                response = requests.post(
+                    url,
+                    data=payload,
+                    timeout=5,
+                )
+
+                response.raise_for_status()
+
+                log.info(
+                    "Enrollment email sent via Notify API | "
+                    "user_id=%s | status=%s | response=%s",
+                    user.id,
+                    response.status_code,
+                    response.text,
+                )
+                return
+
+            except requests.RequestException:
+                log.exception(
+                    "Notify API failed | user_id=%s | attempt=%s",
+                    user.id,
+                    attempt,
+                )
+
+        log.warning(
+            "Notify API unavailable after %s attempts. "
+            "Falling back to Django email backend.",
+            retries,
+        )
+
     email = EmailMultiAlternatives(
         subject=subject,
         body="",
         from_email=from_address,
         to=[user.email],
-        cc=mail_details.get(
-            "cc_addresses",
-            [],
-        ),
-        bcc=mail_details.get(
-            "bcc_addresses",
-            [],
-        ),
+        cc=mail_details.get("cc_addresses", []),
+        bcc=mail_details.get("bcc_addresses", []),
     )
 
     email.attach_alternative(
@@ -228,11 +303,9 @@ def send_enrollment_email(
         "text/html",
     )
 
-    email.send(
-        fail_silently=False,
-    )
+    email.send(fail_silently=False)
 
     log.info(
-        "Enrollment email sent | user_id=%s",
+        "Enrollment email sent via Django backend | user_id=%s",
         user.id,
     )
