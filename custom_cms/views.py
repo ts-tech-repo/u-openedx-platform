@@ -172,8 +172,8 @@ def extras_course_enroll_user(request, enroll="1"):
         user = create_user(
             username=username,
             email=email,
-            first_name=first_name,
-            last_name=last_name,
+            first_name=last_name,
+            last_name=first_name,
             password=password,
         )
 
