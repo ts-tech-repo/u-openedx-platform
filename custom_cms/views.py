@@ -208,29 +208,44 @@ def extras_course_enroll_user(request, enroll="1"):
     mail_details = course_config.get("mail_details", {})
 
     if (
-        mail_details.get("enable")
-        and mail_details.get("subject")
-        and mail_details.get("body_template_name")
-    ):
-        try:
-            send_enrollment_email(user, password, mail_details)
+    mail_details.get("enable")
+    and mail_details.get("subject")
+    and mail_details.get("body_template_name")
+):
+        email_sent = send_enrollment_email(
+            user=user,
+            password=password,
+            mail_details=mail_details,
+        )
 
-        except Exception as exc:
-            log.exception("Enrollment email failed | user_id=%s | email=%s | error=%s", user.id, user.email, exc, exc_info=True)
-            recipient_list = mail_details.get("support_emails", [])
-            if not recipient_list:
-                recipient_list = [settings.CONTACT_EMAIL]
-            from_email = settings.CONTACT_EMAIL if settings.CONTACT_EMAIL not in recipient_list else "no-reply@alv.talentsprint.com"
-            send_mail(
-                subject="Error in sending enrollment email",
-                message=(
-                    f"Unable to send enrollment email "
-                    f"for user {user.email}: {exc}"
-                ),
-                from_email=from_email,
-                recipient_list=recipient_list,
-                fail_silently=True,
-            )
+        if not email_sent:
+            try:
+                recipient_list = (
+                    mail_details.get("support_emails")
+                    or [settings.CONTACT_EMAIL]
+                )
+
+                from_email = (
+                    settings.CONTACT_EMAIL
+                    if settings.CONTACT_EMAIL not in recipient_list
+                    else "no-reply@alv.talentsprint.com"
+                )
+
+                send_mail(
+                    subject="Enrollment email delivery failed",
+                    message=(
+                        f"Enrollment completed successfully.\n\n"
+                        f"User: {user.email}\n"
+                        f"User ID: {user.id}\n\n"
+                        f"Email notification could not be delivered."
+                    ),
+                    from_email=from_email,
+                    recipient_list=recipient_list,
+                    fail_silently=True,
+                )
+
+            except Exception as e:
+                log.exception("Failed to send email | error=%s", e)
 
     else:
         log.info("Enrollment email disabled | config_key=%s", config_key)

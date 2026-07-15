@@ -152,10 +152,6 @@ def generate_random_password(user: User | None = None) -> str:
 
         except ValidationError:
             continue
-import requests
-from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
 
 
 def send_enrollment_email(
@@ -208,18 +204,16 @@ def send_enrollment_email(
         message = render_to_string(template_name, context)
     except Exception:
         log.exception("Failed to render email template: %s", template_name)
-        raise
+        return False
 
     dashboard_url = configuration_helpers.get_value(
         "DASHBOARD_URL",
-        getattr(settings, "DASHBOARD_URL", ""),
-        "https://dashboard.talentsprint.com",
+        getattr(settings, "DASHBOARD_URL", "https://dashboard.talentsprint.com")
     )
 
     notify_config = configuration_helpers.get_value(
         "DASHBOARD_NOTIFY_USER",
-        getattr(settings, "DASHBOARD_NOTIFY_USER", {}),
-        {},
+        getattr(settings, "DASHBOARD_NOTIFY_USER", {})
     )
 
     notify_password = notify_config.get("NOTIFY_PASSWORD")
@@ -274,13 +268,14 @@ def send_enrollment_email(
                     response.status_code,
                     response.text,
                 )
-                return
+                return True
 
-            except requests.RequestException:
+            except requests.RequestException as e:
                 log.exception(
-                    "Notify API failed | user_id=%s | attempt=%s",
+                    "Notify API failed | user_id=%s | attempt=%s | error=%s",
                     user.id,
                     attempt,
+                    e,
                 )
 
         log.warning(
