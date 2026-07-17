@@ -405,3 +405,7 @@
 
   padding: $baseline/2;
 }
+
+.dropdown-menu a[href*="/profile"] {
+    display: none;
+}
