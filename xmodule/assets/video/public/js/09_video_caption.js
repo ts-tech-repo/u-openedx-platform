@@ -904,7 +904,7 @@ VideoCaption.prototype = {
     addPaddings: function() {
         let topSpacer = HtmlUtils.interpolateHtml(
             HtmlUtils.HTML([
-                '<li class="spacing" style="height: {height}px">',
+                '<li class="spacing">',
                         '<a href="#transcript-end-{id}" id="transcript-start-{id}" class="transcript-start"></a>', // eslint-disable-line max-len, indent
                 '</li>'
             ].join('')),
@@ -916,7 +916,7 @@ VideoCaption.prototype = {
 
         let bottomSpacer = HtmlUtils.interpolateHtml(
             HtmlUtils.HTML([
-                '<li class="spacing" style="height: {height}px">',
+                '<li class="spacing">',
                         '<a href="#transcript-start-{id}" id="transcript-end-{id}" class="transcript-end"></a>', // eslint-disable-line max-len, indent
                 '</li>'
             ].join('')),
