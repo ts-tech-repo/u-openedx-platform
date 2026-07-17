@@ -234,7 +234,7 @@
 // instructor dashboard 2
 // ====================
 .dropdown-item a[href*="/profile"] {
-    display: none;
+    display: none !important;
 }
 .instructor-dashboard-content-2 {
   @extend .content;
