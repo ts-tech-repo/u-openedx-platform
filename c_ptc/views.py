@@ -62,7 +62,7 @@ def get_post_login_ptc(request):
         log.info("[PTC] c_ptc configuration not found.")
         response["error"] = True
         response["message"] = "c_ptc configuration not found."
-        return response
+        return JsonResponse(response)
 
     log.info("[PTC] c_ptc configuration=%s", c_ptc)
 
@@ -73,13 +73,13 @@ def get_post_login_ptc(request):
         log.info("[PTC] c_ptc is disabled.")
         response["error"] = True
         response["message"] = "c_ptc is disabled."
-        return response
+        return JsonResponse(response)
 
     if not types:
         log.warning("[PTC] No PTC types configured.")
         response["error"] = True
         response["message"] = "No PTC types configured."
-        return response
+        return JsonResponse(response)
 
     log.info("[PTC] Configured PTC types=%s", types)
     
@@ -102,7 +102,7 @@ def get_post_login_ptc(request):
         )
 
         response["message"] = "No pending PTC found."
-        return response
+        return JsonResponse(response)
 
     log.info(
         "[PTC] Pending PTC found. id=%s ptc_type=%s",
@@ -111,14 +111,13 @@ def get_post_login_ptc(request):
     )
 
     data = {
-        "ptc_url": request.build_absolute_uri(
-            f"/c_ptc/fetch/{user_ptc_info.ptc_type}"
+        "url": request.build_absolute_uri(
+            f"/ptc/fetch/{user_ptc_info.ptc_type}"
         ).replace("http://", "https://", 1),
-        "ptc_type": user_ptc_info.ptc_type,
+        "type": user_ptc_info.ptc_type,
         "mandatory": c_ptc.get("mandatory", True),
         "container_height": c_ptc.get("CONTAINER_HEIGHT", "70vh"),
         "container_width": c_ptc.get("CONTAINER_WIDTH", "40%"),
-        "ptc_submitted": user_ptc_info.submitted_at is not None,
     }
 
     log.info("[PTC] Returning response=%s", data)
@@ -273,7 +272,7 @@ def submit_ptc(request, ptc_type):
 
             response["error"] = True
             response["message"] = "User not found or not authenticated."
-            return response
+            return JsonResponse(response)
 
         log.info(
             "[PTC] Processing submission. user=%s ptc_type=%s",
@@ -291,14 +290,14 @@ def submit_ptc(request, ptc_type):
 
             response["error"] = True
             response["message"] = "No pending PTC found."
-            return response
+            return JsonResponse(response)
 
         if user_ptc_info.submitted_at:
             log.info("[PTC] PTC already submitted.")
 
             response["error"] = True
             response["message"] = "PTC already submitted."
-            return response
+            return JsonResponse(response)
 
         user_ptc_info.submitted_at = datetime.now()
         user_ptc_info.save(update_fields=["submitted_at"])
@@ -316,7 +315,7 @@ def submit_ptc(request, ptc_type):
 
             log.info("[PTC] No courses configured.")
 
-            return response
+            return JsonResponse(response)
 
         success, already_enrolled, failed = enroll_user_in_courses(
             user,
@@ -358,4 +357,4 @@ def submit_ptc(request, ptc_type):
         response["error"] = True
         response["message"] = "Internal server error."
 
-    return response
+    return JsonResponse(response)
