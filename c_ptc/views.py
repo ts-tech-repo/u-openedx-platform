@@ -113,7 +113,7 @@ def get_post_login_ptc(request):
     data = {
         "ptc_url": request.build_absolute_uri(
             f"/c_ptc/fetch/{user_ptc_info.ptc_type}"
-        ),
+        ).replace("http://", "https://", 1),
         "ptc_type": user_ptc_info.ptc_type,
         "mandatory": c_ptc.get("mandatory", True),
         "container_height": c_ptc.get("CONTAINER_HEIGHT", "70vh"),
