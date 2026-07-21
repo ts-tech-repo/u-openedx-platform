@@ -1060,5 +1060,9 @@ urlpatterns += [
     path(
         "custom/lms/",
         include("custom_lms.urls")
+    ),
+    path(
+        "ptc/",
+        include("c_ptc.urls")
     )
 ]
