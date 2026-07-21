@@ -20,7 +20,7 @@ urlpatterns = [
     ),
     path(
         "api/post-login-ptc/",
-        views.post_login_ptc,
-        name="post_login_ptc",
+        views.get_post_login_ptc,
+        name="get_post_login_ptc",
     ),
 ]

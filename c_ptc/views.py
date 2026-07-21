@@ -3,12 +3,14 @@ import json
 
 from django.conf import settings
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
 import logging
 
 from common.djangoapps.edxmako.makoloader import MakoLoader
 from common.djangoapps.edxmako.shortcuts import render_to_response
 from custom_common.helpers import enroll_user_in_courses
+
 from openedx.core.djangoapps.site_configuration import (
     helpers as configuration_helpers,
 )
@@ -28,7 +30,8 @@ def health(request):
             "status": "ok",
         }
     )
-    
+
+@login_required    
 def get_post_login_ptc(request, user):
     """
     Returns PTC popup configuration for the authenticated user.
@@ -100,7 +103,7 @@ def get_post_login_ptc(request, user):
 
     return response
 
-
+@login_required   
 def fetch_ptc(request, ptc_type):
     log.info("[PTC] Fetch request received. ptc_type=%s", ptc_type)
 
@@ -229,7 +232,7 @@ def fetch_ptc(request, ptc_type):
             },
         )
 
-
+@login_required   
 def submit_ptc(request, ptc_type):
     log.info("[PTC] Submit request received. ptc_type=%s", ptc_type)
 
