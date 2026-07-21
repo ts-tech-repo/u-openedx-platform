@@ -116,8 +116,8 @@ def get_post_login_ptc(request):
         ).replace("http://", "https://", 1),
         "type": user_ptc_info.ptc_type,
         "mandatory": c_ptc.get("mandatory", True),
-        "container_height": c_ptc.get("CONTAINER_HEIGHT", "70vh"),
-        "container_width": c_ptc.get("CONTAINER_WIDTH", "40%"),
+        "container_height": c_ptc.get("CONTAINER_HEIGHT", "80vh"),
+        "container_width": c_ptc.get("CONTAINER_WIDTH", "90%"),
     }
 
     log.info("[PTC] Returning response=%s", data)
@@ -135,7 +135,7 @@ def fetch_ptc(request, ptc_type):
         if not user:
             log.warning("[PTC] Anonymous/invalid user.")
             return render_to_response(
-                "c_ptc/show_message.html",
+                "show_message.html",
                 {
                     "message": "User not found or not authenticated.",
                     "status": "error",
@@ -161,7 +161,7 @@ def fetch_ptc(request, ptc_type):
             )
 
             return render_to_response(
-                "c_ptc/show_message.html",
+                "show_message.html",
                 {
                     "message": "No pending PTC found.",
                     "status": "error",
@@ -176,7 +176,7 @@ def fetch_ptc(request, ptc_type):
             )
 
             return render_to_response(
-                "c_ptc/show_message.html",
+                "show_message.html",
                 {
                     "message": "PTC already submitted.",
                     "status": "error",
@@ -205,6 +205,7 @@ def fetch_ptc(request, ptc_type):
             "institution": user_ptc_info_metadata.get("institution"),
             "program_name": user_ptc_info_metadata.get("program_name"),
             "ptc_type": ptc_type,
+            "ptc_submit_url": f"{LMS_ROOT_URL}/ptc/submit/{ptc_type}",
         }
 
         log.info("[PTC] Updating metadata for user=%s", user.username)
@@ -217,26 +218,15 @@ def fetch_ptc(request, ptc_type):
 
         log.info("[PTC] Metadata updated successfully.")
 
-        template = f"c_ptc/{ptc_type}.html"
+        template = f"{ptc_type}.html"
 
         log.info("[PTC] Looking for template=%s", template)
 
-        if MakoLoader.get_template(template):
-            log.info("[PTC] Rendering template=%s", template)
-
-            return render_to_response(
-                template,
-                data,
-            )
-
-        log.error("[PTC] Template not found. template=%s", template)
+        log.info("[PTC] Rendering template=%s", template)
 
         return render_to_response(
-            "c_ptc/show_message.html",
-            {
-                "message": "PTC not found.",
-                "status": "error",
-            },
+            template,
+            data,
         )
 
 
@@ -247,7 +237,7 @@ def fetch_ptc(request, ptc_type):
         )
 
         return render_to_response(
-            "c_ptc/show_message.html",
+            "show_message.html",
             {
                 "message": "Unexpected error occurred.",
                 "status": "error",
