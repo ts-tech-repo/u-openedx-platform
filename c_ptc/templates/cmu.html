@@ -125,6 +125,10 @@ p{
   margin: 0;
   margin-left: 20px;
 }
+.ol_content li {
+  font-weight: normal;
+}
+
 @media (min-width: 768px){
 .navbar-fixed-bottom, .navbar-fixed-top {border-radius: 0;}
 }
@@ -195,7 +199,7 @@ p{
 </style>
 <body class="home">
   <header class="header innerpage-menu confirmation-pg">
-    <nav class="navbar navbar-default navbar-fixed-top">
+    <!-- <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
         <div class="row">
           <div class="col-md-12">
@@ -210,12 +214,13 @@ p{
           </div>
         </div>
       </div>
-    </nav>
+    </nav> -->
     <div class="bannersection">
       <div class="container">
         <div class="row">
           <div class="col-md-12 logo">
-            <h1 class="text-center"><strong>Platform Terms and Conditions</strong></h1>
+            <h1 class="text-center"><strong>Program Terms and Conditions</strong></h1>
+            <h2 class="text-center">AI for Business | Carnegie Mellon University</h2>
             <table class="center" {% if data['timestamp'] %} style = "width: 96%" {% endif %}>
               <tr>
                 <td>
@@ -229,19 +234,41 @@ p{
 
               <tr>
                 <td>
+                  <b>Institution:</b>
+                  <br>
+                  <br>
+                  <b>(</b>hereinafter referred to as <b>"Institution")</b>
+                </td>
+                <td>{{data['institution']}}</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <b>Program Name:</b>
+                  <br>
+                  <br>
+                  <b>(</b>hereinafter referred to as <b>"Program Name")</b>
+                </td>
+                <td>{{data['program_name']}}</td>
+              </tr>
+
+              <tr>
+                <td>
                   <b>Platform URL</b>
                   <br>
                   <br>
                   <b>(</b>Hereinafter referred to as <b>"Platform")</b>
                 </td>
-                <td><a href="/login" target="_blank">URL</a></td>
+                <td><a href="{{data['platform_url']}}" target="_blank">{{data['platform_url']}}</a></td>
               </tr>
             </table>
 
+          </div>
+        </div>
 
-            <div class="Profile_details">
-
-              <table style="width: 100%;">
+        <div class="row">
+          <div class="col-md-12 logo">
+            <table style="margin-left:30px; width: 100%;">
                 <tr>
                     <td style="width: 1%;vertical-align: initial;">
                         <p class="terms-condition-label" style="margin-top: 3%;text-indent: initial;">
@@ -250,16 +277,22 @@ p{
                         </p>
                     </td>
                     <td style="width: 98%;vertical-align: initial;">
-                        <p style="text-indent: initial;"><b>I HEREBY DECLARE THAT I HAVE READ AND UNDERSTOOD THE TERMS OF THIS PROGRAM TERMS AND CONDITIONS AND HEREBY AGREE TO ALL OF THE PROVISIONS CONTAINED BELOW</b>
+                        <p style="text-indent: initial;"><b>I hereby confirm that I have enrolled for the above Program and will adhere to the Program Terms and Conditions (hereinafter referred to as "PTC"). I have read and understood the PTC detailed herein.</b>
                         </p>
                     </td>
                 </tr>
               </table>
-
+              
               <table class="profile" >
+                <tr id="name_tr">
+                  <td>Name : </td>
+                  <td>{{data['name']}}</td>
+                </tr>
+                <tr id="email_tr">
+                  <td>Email : </td>
+                  <td>{{data['email']}}</td>
                 </tr>
               </table>
-            </div>
           </div>
         </div>
 
@@ -269,121 +302,128 @@ p{
           <div class="col-md-12 annexure">
             <div class="col-md-12 annexure">
 
-              <p style="text-indent: initial;">The Program Terms and Conditions are in addition to the Terms of Use of the platform <a target="_blank" href="https://talentsprint.com/usa/terms-and-conditions.dpl">Terms of Use</a>  of the platform <b>("Terms of Use").</b> By accessing the Program <b>("Services")</b>  provided by the Institution through the Platform (defined below), the Participant accepts these Program Terms and Conditions. If the Participant does not agree with these Program Terms and Conditions, they should not access or use the Institution's platform for accessing the Program <b>("Platform")</b> and the Participant will not have access to the Program. Institution regularly reviews its internal procedures and policies and as a result, the contents of this document may change from time to time. Without prejudice to any stipulation herein or except where specifically mentioned otherwise, the Institution reserves the right to modify or terminate any of the Services or the policies described herein at its sole discretion without prior notice, the Participant's continued use of the Services will be deemed acceptance to the changes. Except where provided otherwise and without prejudice to any stipulation herein to the contrary, the Institution alone reserves the right to make an exception to any of the contents in the Program Terms and Conditions.</p>
-
-              <p style="text-indent: initial;">These Program Terms and Conditions supersede all previous oral and written terms and conditions (if any) communicated to the Participant and shall act as a binding agreement between the Institution and the Participant. The Program Terms and Conditions along with the <a target="_blank" href="https://talentsprint.com/usa/privacy-policy.dpl">Privacy Policy,</a> <a target="_blank" href="https://talentsprint.com/usa/terms-and-conditions.dpl">Terms & Conditions</a>, Classroom Etiquette, Honor Code, Certification and Academic Guidelines, Content Guidelines, and other policies and guidelines of the Institution's Platform (collectively referred to as #notDefined) constitute a binding agreement. These Program Terms and Conditions will subsist until completion of the Program.
-              </p>    
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>1. Eligibility</strong></h2>
+              <p style="text-indent: 0;">The Participant hereby represents that he/she is above the age of 18 (eighteen) years and understands that he/she must be 18 years of age or older to participate in this Program.</p>
           </div>
 
           <div class="col-md-12 annexure">
-              <h2 class="text-left"><strong>Part A: Eligibility and Access</strong></h2>
-              <ul>
-                  <li>All the Services and resources provided by the Institution are legally available to access ONLY for the users who have enrolled in the Program. The Participants are strictly prohibited from sharing any of the Program materials or details with any person who is not a participant in the Program.</li>
-              </ul>
+              <h2 class="text-left"><strong>2. Program Access</strong></h2>
+              <p style="text-indent: 0;">All Services and resources provided by TalentSprint are legally available for access only by users enrolled in the Program. The Participant is strictly prohibited from sharing any Program materials or Program-related information with any person who is not enrolled in the Program.</p>
           </div>
 
           <div class="col-md-12 annexure">
-              <h2 class="text-left"><strong>Part B: Program Terms of Use</strong></h2>
-              <ul type="1">
-                          <li> By confirming the acceptance of these Program Terms and Conditions, the Participant also confirms their acknowledgment and acceptance of the Classroom Etiquette, Honor Code, Certification and Academic Guidelines, Content Guidelines (collectively referred to as <b>"Program Policies"),</b> and any other guidelines of Institution's Platform, in respect of each of the sessions/ classes <b>("Class/ Classes")</b> of the Program.</li>
-
-                          <li>All online Classes shall be held on Institution's Platform. Multiple technology platforms and/or tools will be used for effective delivery of the Classes including boot camps, lab experiments, tests, workshops, projects, assignments, and other content, as needed, in relation to the Program. All Participants must use these platforms/tools. The respective login accounts ("Account") will be created and shared for the provided systems as and when required.
-                          </li>
-
-                          <li>All Program materials and topics discussed during Classes will be uploaded on the Institution's Platform. The Platform will also function as a forum for discussion, which must be used by each Participant in accordance with the Content Guidelines. The participant shall communicate with the Institution, faculty, or other Participants of the Program only through the Platform or such other official means of communication as provided by the Institution.
-                          </li>
-
-                          <li>The Institution may conduct proctored online exams for evaluation of one or more modules of the Program. The online proctoring will be done by humans and/or AI-powered systems which shall have the right to access the participant's web camera, microphone, and the test screen. Any violation of the exam guidelines caught during the exam will result in disqualification of the Participant from that exam, and such Participant will be subject to appropriate disciplinary action.</li>
-
-                          <li>The Institution will collect program feedback on various aspects from time to time and responses are mandatory. Please note that the feedback provided will enable the Institution to strengthen and bring to the participant and future participants a high-quality Program.
-                          </li>
-                          <li>The Participant hereby agrees and acknowledges that they may be provided with third-party hardware and/ or software <b>("Third Party Product)</b> in relation to the Program and that the Participant shall operate such Third-Party Products in accordance with the user manual provided with such Third Party Product and the instructions of the trainer of the relevant Program.
-                          </li>
-                          <li> Participants shall ensure adequate internet connection for effective online learning on the Institution's interactive live online Platform. The Institution shall not be responsible for any loss to the Participant owing to improper internet connectivity or hardware issues at the Participant's end.
-                          </li>
-                          <li>The Participant hereby agrees and acknowledges that the Institution has the right to modify the Program or any portion thereof, including the format or the content of the Program, as may be necessary for providing the Program and Services to the Participants.
-                          </li>
-                          <li>The Institution holds absolute and sole discretion and reserves the right to scholarships, incentives, and schemes offered by it from time to time for specific categories of Participants or based on specific dates or in any other manner it deems fit.
-                          </li>
-
-              </ul>
+              <h2 class="text-left"><strong>3. Disclaimer of Warranties</strong></h2>
+              <p style="text-indent: 0;">The Participant's access to and use of the Services, Third Party Products, Platform, and Program is at his/her own risk. The Participant understands and agrees that the Services and Third Party Products are provided on an "AS IS" and "AS AVAILABLE" basis. Without limiting the foregoing, TalentSprint disclaims all warranties and conditions, whether express or implied, including warranties of title, merchantability, fitness for a particular purpose, and non-infringement.</p>
           </div>
 
           <div class="col-md-12 annexure">
-              <h2 class="text-left"><strong>Part C: Disclaimers and Limitations of Liability</strong></h2>
-              <ul type="1">
-                <li>
-                    <b>Availability on "AS-IS" basis:</b>
-                    <ol type="a" style="padding-left: 10px;">
-                        <li>The Institution's Entities make no warranty and disclaim all responsibility and liability for: (i) any harm to the participant's computer system, loss of data, or other harm that results from the participant's access to or use of the Service, or any content, data or material downloaded through the Platform; (ii) any harm to the Participant or the Participant's computer system that may result from the use of the Third Party Products, to the extent the Participant's use of such Third Party Products was not in accordance with the instruction manual provided with the Third Party Products and the instructions of the trainer of the relevant program (iii) the deletion of, or the failure to store or to transmit, any Class, content and other communications maintained by the Service. Further, the Institutions shall not be held responsible for the non-availability of the Services during periodic maintenance operations or any unplanned suspension of access to Services that may occur due to technical reasons or for any reason beyond the Institution's control.</li>
-                        <li>No advice or information, whether oral or written, obtained from the Institution's Entities or through the Services, will create any warranty not expressly made herein.
-                          The participant understands and agrees that the Institution does not warrant or undertake any liability for the participant's career outcomes upon completion of the Program.
-                          </li>
-                    </ol>
-                </li>
-                <li>
-                  The Participants hereby represent and warrant that they shall not, at anytime during the course of the Program or thereafter, directly or indirectly, in any manner disparage, defame, or otherwise make any negative, defamatory, or derogatory statements, verbal or written, including but not limited to, on any online or offline platforms, media, social media forums, etc., that may harm the business or reputation of the Institution, its partners, affiliates, officers, directors, shareholders, employees, agents publicly or otherwise. Limitation of Liability: To the maximum extent permitted by applicable law, the Institution Entities shall not be liable for any indirect, incidental, special, consequential or punitive damages or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, good-will, or other intangible losses resulting from (i) The Participant's access to or use of or inability to access or use the Platform, the Service or the Third Party Products; (ii) any content or other material available on or through the Platform, including the Classes; or (iv) unauthorized access, use or alteration of the Participant's content.
-                </li>
-                <li>The Participant hereby agrees and acknowledges that, upon completion of the Program and issuance of the certificate (if any), the Institution shall not have any further liability of any nature, towards the Participant, in relation to the Program. In this regard, the Participant agrees to waive any further rights or claims against the Institution in relation to the Program and to release and discharge the Institution, its partners and affiliates, from any and all loss, liability, cause of action, suits, and/ or claims of any type whatsoever, whether known or unknown, direct or indirect, arising out of the participant's participation or completion of the Program including with respect to providing any further service, content or deliverables in relation to the Program.
-                </li>
-                <li>
-                  Upon completion of the Program and issuance of the certificate (if any), to the extent permitted by the applicable laws, the Participant agrees that the commitments from the Institution are fully delivered. No claims against the Institution, its partners, and affiliates, at law or in contract or in tort, of any nature whatsoever, in the United States of America <b>("USA")</b> or elsewhere in the world, arising out of the Participant's participation and completion of the Program will be entertained. The Participant hereby agrees to indemnify and hold Institution, its partners and affiliates, and their respective directors, officers, representatives, employees, and agents harmless against any and all suits, actions, proceedings, losses, liabilities, claims, damages, costs, expenses, including reasonable legal fees, disbursements and all consequences of any actions which arise out of, result from any claims made by the Participant, including any claims relating to the Program content, Classes and mode of Classes, after the completion of the Program and issuance of the certificate (if any).
-                </li>
-                <li>
-                 <b>Violation of Terms:&nbsp;</b>The Participant agrees that in the event of any violation by the Participant of these Program Terms and Conditions, or Platform Policies or pursuant to any administrative or judicial order or direction by any governmental authority, the Institution reserves the right to suspend or terminate the Participant's Account and/or to refuse the Service to the Participant or terminate the Participant's access to further Classes. The Participant's account and any other learning logins created for the Participant as part of the Program will be blocked and removed. The Participant consents to the Institution obtaining any injunctive or equitable relief that it deems necessary or appropriate in such circumstances. These remedies are in addition to any other remedies that the Institution may have at law or in equity. If the Institution takes any legal action against the Participant because of their violation of these Program Terms and Conditions, it will be entitled to recover from the Participant, and the Participant agrees to pay all reasonable attorneys' fees and costs of such action, in addition to any other relief that may be granted.
-                </li>
-            </ul>
+              <h2 class="text-left"><strong>4. Limitation of Liability</strong></h2>
+              <p style="text-indent: 0;">To the extent permitted by applicable law, TalentSprint shall not be liable for any indirect, incidental, special, consequential, punitive, or exemplary damages, including loss of profits, revenues, data, goodwill, or other intangible losses resulting from:</p> 
+              <ol type="a" class="ol_content">
+                <li>The Participant's access to, use of, or inability to access or use the Platform, Services, or Third Party Products</li>
+                <li>Any content or material available through the Platform, including classes and Program content</li>
+                <li>Unauthorized access to, use of, or alteration of any content posted by the Participant on the Platform</li>
+              </ol>
+              <p>Upon completion of the Program and issuance and acceptance of any certificate, the Institution and/or TalentSprint shall have no further liability toward the Participant in relation to the Program. The Participant agrees to waive any further claims against the Institution and/or TalentSprint relating to the Program or any Program deliverables.</p>
           </div>
 
           <div class="col-md-12 annexure">
-              <h2 class="text-left"><strong>Part D: Fee Terms</strong></h2>
-              <ul>
-                  <li>The Participant will pay all the fees without fail as per the payment schedule.</li>
-                  <li>Registration fee and Tuition fee is non-refundable in any circumstances.</li>
-                  <li>Participants may request for batch transfer for genuine reasons. The Institution may consider the Participant's request for a batch transfer subject to the payment of the batch transfer fee and the difference, if any, in the Tuition fee. The Participant will be informed about the amount of the batch transfer fee and the difference in the Tuition fee during the approval of the batch transfer.</li>
-                  <li>In case of any non-payment of the fee, Institution and/or TalentSprint has the right to restrict/revoke the Participant's access to the Program and also withhold the certificate of the Participant.</li>
-              </ul>
+              <h2 class="text-left"><strong>5. Violations and Remedies</strong></h2>
+              <p style="text-indent: 0;">The Participant agrees that any violation of these Program Terms and Conditions or any annexures thereto constitutes an unlawful and unfair business practice and may cause irreparable harm to TalentSprint for which monetary damages may be inadequate.</p>
+               <p style="text-indent: 0;">Accordingly, TalentSprint reserves the right to suspend or terminate the Participant's Account and/or access to the Services or Platform and may seek injunctive, equitable, or other relief as permitted by law. Such remedies shall be in addition to any other remedies available at law or in equity.</p>
+                <p style="text-indent: 0;">If TalentSprint initiates legal action arising from a violation of these Program Terms and Conditions, TalentSprint shall be entitled to recover all reasonable attorneys' fees, legal costs, and expenses in addition to any other relief granted.</p>
           </div>
-          
-          <div class="col-md-12 annexure">
-            <h2 class="text-left"><strong>Part E: Career Services</strong></h2>
-            <p style="text-indent: 0;">By participating in the Program, participants acknowledge and agree to the following terms:</p>
-            <ul>
-                <li>Career services support is provided for 16 weeks concurrently with the bootcamp program and up to 12 months of job search support post-program completion.</li>
-                <li>Participants have access to the Career Accelerator Platform, Career Resource Library, group coaching sessions, and a job board posting appropriate opportunities.</li>
-                <li>Participants who opt in and meet/maintain eligibility requirements as detailed below will have access to 1:1 coaching support.</li>
-                <li>TalentSprint will make every effort to assist in the placement of the Participants. However, TalentSprint gives no assurance or guarantee of such placement and TalentSprint disclaims all liability with respect to such placement or failure to achieve any placement. Any interactions of the Participant with employers will be guided by the employer's norms and policies.</li>
-                <li>Participants need to meet the eligibility requirements given below to get access to Career Services:
-                    <ol type="a" style="padding-left: 10px;">
-                        <li>Program Phase (During Bootcamp)
-                            <ul class="career-services-list-items">
-                                <li><b>Attendance:&nbsp;</b>Participants must maintain at least 90% attendance in all live online Career Services (CS) programs (workshops, sessions, panels, etc.).</li>
-                                <li><b>Deliverables:&nbsp;</b>Participants must complete 90% of career-related deliverables on time, including resume, LinkedIn profile, portfolio, and any other required documentation.</li>
-                            </ul>
-                        </li>
-                        <li>Job Search Phase (Post-Graduation)
-                            <ul class="career-services-list-items">
-                                <li>Graduates will have access to job search support post-program, contingent on maintaining eligibility. Program participants are expected to take full advantage of the program and engage proactively with the resources available to maximize job search success.</li>
-                            </ul>
-                        </li>
-                    </ol>
-                </li>
-            </ul>
-        </div>
 
-        <div class="col-md-12 annexure">
-            <h2 class="text-left"><strong>Part F: Miscellaneous Terms</strong></h2>
-            <ul>
-                <li><b>Governing Law and Jurisdiction:&nbsp;</b>These terms shall be governed by the laws of California without giving effect to its conflict of laws provisions. Any dispute arising out of or related to these Program Terms and Conditions shall
-                  be subject to the exclusive jurisdiction of the state and federal courts within the State of California, USA.
-                  </li>
-                  <li><b>Grievance Redressal:&nbsp;</b>Any complaints arising from the use of the Services or the Platform may be addressed to the Program Helpdesk at <a href="mailto:support-cmu@talentsprint.com">support-cmu@talentsprint.com</a>.
-                  </li>
-                  <li><b>Survival:&nbsp;</b>All provisions of these Program Terms and Conditions, which by their very nature are intended to survive the completion of the Program, shall survive in perpetuity including Part B Program Terms of Use and Part C: Disclaimers and Limitations of Liability</li>
-            </ul>
-            <p style="text-indent: initial;">By agreeing to these terms, I express my commitment to participate fully in Cohort of the Techbridge Coding Bootcamp Program and adhere to the requirements outlined above. I appreciate the opportunity and look forward to making the most of this experience.
-            </p>
-        </div>
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>6. Program Changes</strong></h2>
+              <p style="text-indent: 0;">TalentSprint and/or the Institution regularly review their policies, procedures, services, and Program offerings. TalentSprint and/or the Institution reserve the right to modify, update, suspend, or terminate any aspect of the Program, Services, Platform, Program content, Program format, or any related policies by issuing written notification.</p>
+              <p style="text-indent: 0;">Any such changes shall become effective upon notification. Continued participation in the Program or use of the Services following such notice shall constitute acceptance of the revised terms.</p>
+              <p style="text-indent: 0;">These Program Terms and Conditions supersede all previous oral and written communications relating to the subject matter herein and constitute a binding agreement between TalentSprint and the Participant.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>7. Academic Policies and Certification</strong></h2>
+              <p style="text-indent: 0;">The Participant shall be evaluated and certified in accordance with policies established by the Institution. Such policies shall be binding upon the Participant.</p>
+              <p style="text-indent: 0;">The Institution's decisions regarding quizzes, examinations, assignments, projects, deliverables, certification, grading, and academic standing shall be final. The Institution reserves the right to resolve any ambiguity relating to grades, assessments, or certification and may modify, update, or amend such policies from time to time.</p>
+              <p style="text-indent: 0;">Certificates shall be awarded only to Participants who satisfy all applicable Program requirements.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>8. Participant Conduct</strong></h2>
+              <p style="text-indent: 0;">The Participant is expected to treat all members of the Institution and TalentSprint community, as well as fellow Participants, with respect and professionalism.</p>
+              <p style="text-indent: 0;">The Participant shall not engage in intimidation, harassment, abuse, stalking, bullying, threatening behavior, derogatory conduct, defamation, impersonation, gambling, dissemination of inappropriate or indecent content, hate speech, illegal activities, intellectual property infringement, or any conduct that infringes upon the rights of any member of the community.</p>
+              <p style="text-indent: 0;">The Participant shall not, directly or indirectly, disparage, defame, or make any negative, defamatory, or derogatory statements, whether oral or written, or engage in conduct that may harm the business, reputation, or goodwill of TalentSprint, the Institution, their affiliates, partners, officers, directors, employees, agents, or shareholders.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>9. Intellectual Property and Content Ownership</strong></h2>
+              <p style="text-indent: 0;">All content made available in connection with the Services, including text, images, graphics, data, software, video, audio, databases, trademarks, logos, and related materials, is owned by the Institution, TalentSprint, or licensed third parties.</p>
+              <p style="text-indent: 0;">Any reproduction, modification, adaptation, distribution, translation, transmission, republication, resale, commercial exploitation, or other unauthorized use of such content is strictly prohibited.</p>
+              <p style="text-indent: 0;">The Services are provided solely for the Participant's personal, non-commercial, and lawful use in connection with the Program. Nothing contained in the Services shall be construed as granting any license or right to use any intellectual property without the prior written consent of the applicable rights holder.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>10. Program Delivery and Technology Requirements</strong></h2>
+              <p style="text-indent: 0;">The Program will be delivered through TalentSprint's Platform and through third-party hardware, software, tools, and technology platforms ("Third Party Products").</p>
+              <p style="text-indent: 0;">The Participant agrees to use such Platforms and Third Party Products in accordance with applicable instructions, user manuals, Platform Terms, and Program requirements. By accepting these Program Terms and Conditions, the Participant also acknowledges and accepts the applicable Platform Terms.</p>
+              <p style="text-indent: 0;">TalentSprint may create and provide login credentials for systems and tools used in connection with the Program.</p>
+              <p style="text-indent: 0;">The Participant is responsible for maintaining adequate internet connectivity and hardware required for participation in the Program. TalentSprint shall not be responsible for any loss, interruption, or inability to participate arising from internet connectivity issues, hardware failures, or technology limitations at the Participant's end.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>11. Scholarships and Incentives</strong></h2>
+              <p style="text-indent: 0;">TalentSprint and/or the Institution reserve the sole and absolute discretion to offer scholarships, incentives, discounts, or other schemes from time to time based on eligibility criteria, dates, categories of Participants, or any other factors they deem appropriate.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>12. Account Registration and Security</strong></h2>
+              <p style="text-indent: 0;">The Participant shall ensure that all registration information ("Account Information") is accurate, current, complete, and not misleading and shall promptly notify TalentSprint of any changes.</p>
+              <p style="text-indent: 0;">TalentSprint may suspend or terminate an Account where it reasonably believes that submitted information is inaccurate, incomplete, false, or misleading.</p>
+              <p style="text-indent: 0;">The Participant is solely responsible for all activity occurring under the Participant's Account and shall maintain the confidentiality and security of all login credentials and Account information.</p>
+              <p style="text-indent: 0;">Each registration is intended for use by a single Participant only. The Participant shall not:</p>
+              <ol type="a" class="ol_content">
+                <li>Permit any other person to use the Participant's login credentials</li>
+                <li>Allow access to the Platform by unregistered individuals through shared access arrangements</li>
+                <li>Make a single Account available to multiple users</li>
+                <li>Sell, transfer, trade, or otherwise assign an Account</li>
+              </ol>
+              <p style="text-indent: 0;">The Participant shall promptly notify TalentSprint of any unauthorized use of an Account or any security breach. TalentSprint shall not be liable for losses arising from unauthorized use of an Account.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>13. Use Restrictions</strong></h2>
+              <p style="text-indent: 0;">When using the Platform, Services, Third Party Products, or Program resources, the Participant shall not:</p>
+              <ol type="a" class="ol_content">
+                <li>Interfere with or disrupt the use of the Platform by other users</li>
+                <li>Introduce viruses, malware, or other malicious code</li>
+                <li>Remove copyright, trademark, or proprietary notices</li>
+                <li>Frame, mirror, scrape, crawl, reverse engineer, decompile, disassemble, or otherwise attempt to derive source code from the Platform</li>
+                <li>Circumvent Platform security measures or access restricted services</li>
+                <li>Access, search, or collect information through unauthorized automated means</li>
+                <li>Use the Services for unlawful or unauthorized purposes</li>
+                <li>Tamper with systems, networks, or technical infrastructure</li>
+                <li>Probe or test security vulnerabilities</li>
+                <li>Build or assist others in building competing products or services using information obtained from the Platform</li>
+                <li>Encourage, assist, or facilitate any of the foregoing activities</li>
+              </ol>
+              <p style="text-indent: 0;">The Platform may contain links to third-party websites or resources. TalentSprint does not control and is not responsible for the availability, accuracy, content, products, or services available through such third-party resources.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>14. Additional Carnegie Mellon University-Specific Terms</strong></h2>
+              <p style="text-indent: 0;"><i>For clarity, Carnegie Mellon University is the Institution under these Program Terms and Conditions. The provisions below are additional Carnegie Mellon University-specific acknowledgments, disclaimers and limitations and should be read together with the preceding sections.</i></p>
+              <ol type="a" class="ol_content">
+                <li>This program and its information and contents are provided or made available to you for your own personal use and reference only and may not be used for any other purpose. All information provided in this program is provided or made available to you by Carnegie Mellon University on an "as is" basis. Carnegie Mellon University does not make any warranties of any kind, either express or implied, as to any matter, and all such warranties, including warranties of merchantability and fitness for a particular purpose, are expressly disclaimed, except to the extent (and only the extent) prohibited by applicable law. Without limiting the generality of the foregoing, Carnegie Mellon University does not make any warranty of any kind relating to informational content, including that it is error-free, or results to be obtained from use.</li>
+                <li>Carnegie Mellon University and its employees, faculty and staff will not be liable to you or any third party in contract, tort, warranty, strict liability, or any other legal theory for any indirect, consequential, incidental, punitive or exemplary damages or loss of profits, even if Carnegie Mellon University or any of its employees, faculty and staff has been advised of the possibility of such damages.</li>
+                <li>Carnegie Mellon university's maximum liability to you for any reason arising out of or relating to the program is limited to the amount of fees paid by you to participate in the program.</li>
+                <li>You understand that you must be 18 years of age or older to participate in this program.</li>
+                <li>The foregoing understandings, disclaimers and limitations on liability shall be governed by and construed under the laws of the commonwealth of Pennsylvania, united states of America, without regard to conflict of law provisions in that or any other jurisdiction.</li>
+                <li>By enrolling to participate in the program, you acknowledge and agree to the foregoing, with the intent to be legally bound. If you do not agree to the foregoing, you cannot enroll/participate in the program.</li>
+                <li>Carnegie Mellon University and its employees, faculty and staff are express third party beneficiaries of your acknowledgments and agreements to the foregoing.</li>
+              </ol>
+          </div>
+
 
       </div>
   </div>
