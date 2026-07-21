@@ -66,16 +66,18 @@ def get_post_login_ptc(request):
         return None
 
     log.info("[PTC] Configured PTC types=%s", types)
+    
+    user_ptc_info = None
+    
+    for ptc_type in types:
+        user_ptc_info = UserPtcInfo.objects.filter(
+            userid=user,
+            ptc_type=ptc_type,
+            submitted_at__isnull=True,
+        ).first()
 
-    queryset = UserPtcInfo.objects.filter(
-        userid=user,
-        ptc_type__in=types,
-        submitted_at__isnull=True,
-    )
-
-    log.info("[PTC] SQL=%s", queryset.query)
-
-    user_ptc_info = queryset.first()
+        if user_ptc_info:
+            break
 
     if not user_ptc_info:
         log.info(
