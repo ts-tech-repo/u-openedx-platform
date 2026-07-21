@@ -14,6 +14,7 @@ class UserPtcInfoInline(admin.StackedInline):
     model = UserPtcInfo
     extra = 0
     show_change_link = True
+    can_delete = False
 
     fields = (
         "ptc_type",
@@ -43,32 +44,3 @@ if user_admin:
     if UserPtcInfoInline not in inlines:
         inlines.append(UserPtcInfoInline)
         user_admin.inlines = inlines
-
-
-@admin.register(UserPtcInfo)
-class UserPtcInfoAdmin(admin.ModelAdmin):
-    list_display = (
-        "ptc_type",
-        "submitted_at",
-        "created_at",
-    )
-
-    search_fields = (
-        "userid__username",
-        "userid__email",
-        "ptc_type",
-    )
-
-    readonly_fields = (
-        "created_at",
-        "modified_at",
-    )
-
-    fields = (
-        "ptc_type",
-        "submitted_at",
-        "course_ids",
-        "metadata",
-        "created_at",
-        "modified_at",
-    )
