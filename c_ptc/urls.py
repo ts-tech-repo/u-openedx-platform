@@ -19,7 +19,7 @@ urlpatterns = [
         name="submit-ptc"
     ),
     path(
-        "api/post-login-ptc/",
+        "get-post-login-ptc",
         views.get_post_login_ptc,
         name="get_post_login_ptc",
     ),

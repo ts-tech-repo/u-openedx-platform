@@ -32,10 +32,11 @@ def health(request):
     )
 
 @login_required    
-def get_post_login_ptc(request, user):
+def get_post_login_ptc(request):
     """
     Returns PTC popup configuration for the authenticated user.
     """
+    user = _get_user(request)
 
     log.info(
         "[PTC] Checking post-login PTC. user_id=%s username=%s",
