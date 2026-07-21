@@ -27,6 +27,7 @@ class UserPtcInfoInline(admin.StackedInline):
     readonly_fields = (
         "created_at",
         "modified_at",
+        "submitted_at",
     )
 
     verbose_name = "User PTC Info"
@@ -47,7 +48,6 @@ if user_admin:
 @admin.register(UserPtcInfo)
 class UserPtcInfoAdmin(admin.ModelAdmin):
     list_display = (
-        "userid",
         "ptc_type",
         "submitted_at",
         "created_at",
@@ -65,7 +65,6 @@ class UserPtcInfoAdmin(admin.ModelAdmin):
     )
 
     fields = (
-        "userid",
         "ptc_type",
         "submitted_at",
         "course_ids",
