@@ -18,4 +18,9 @@ urlpatterns = [
         views.submit_ptc,
         name="submit-ptc"
     ),
+    path(
+        "api/post-login-ptc/",
+        views.post_login_ptc,
+        name="post_login_ptc",
+    ),
 ]

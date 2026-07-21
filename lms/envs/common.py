@@ -2394,7 +2394,7 @@ INSTALLED_APPS = [
     # Custom Apps
     "custom_lms",
     "custom_common",
-    "c_ptc",
+    "c_ptc.apps.CustomPTCConfig",
 ]
 
 ######################### Django Rest Framework ########################

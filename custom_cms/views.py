@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.conf import settings
 
+from c_ptc.helpers import _create_user_ptc_info_record
 from rest_framework.decorators import (
     api_view,
     authentication_classes,
@@ -16,17 +17,15 @@ from rest_framework.permissions import IsAuthenticated
 from edx_rest_framework_extensions.auth.jwt.authentication import JwtAuthentication
 from edx_rest_framework_extensions.permissions import NotJwtRestrictedApplication
 
-from custom_common.deteministic_safe_aes import encrypt
-from openedx.core.djangoapps.enrollments.api import add_enrollment
-from openedx.core.djangoapps.enrollments.errors import CourseEnrollmentExistsError
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 
+from custom_common.deteministic_safe_aes import encrypt
 from custom_common.helpers import (
     create_user,
-    deactivate_enrollments,
     generate_random_password,
     generate_username,
     send_enrollment_email,
+    enroll_user_in_courses,
 )
 
 
@@ -89,10 +88,11 @@ def extras_course_enroll_user(request, enroll="1"):
     log.info("Payload: %s", payload)
 
     email = payload.get("email")
-    first_name = payload.get("firstname", "")
-    last_name = payload.get("lastname", "")
+    first_name = payload.get("firstname", "").strip()
+    last_name = payload.get("lastname", "").strip()
     username = payload.get("username")
     password = payload.get("password")
+    enable_ptc = False
 
     if enroll not in ["0", "1"]:
         log.warning("Invalid enroll value | value=%s", enroll)
@@ -138,9 +138,21 @@ def extras_course_enroll_user(request, enroll="1"):
             },
             status=400,
         )
-
-    courses = get_unique_courses(payload.get("courses", []), course_config.get("courses", []))
-    log.info("Courses prepared | count=%s", len(courses), extra={"courses": courses})
+    post_login_popup = course_config.get("post_login_popup", {})
+    log.info("Post login popup: %s", post_login_popup)
+    
+    ptc_type = post_login_popup.get("ptc_type", "") if post_login_popup else []
+    
+    if ptc_type:
+        enable_ptc = post_login_popup.get("enable_ptc", True)
+    
+    institution = post_login_popup.get("institution", "-")
+    program_name = post_login_popup.get("program_name", "-")
+    metadata = {
+        "institution": institution,
+        "program_name": program_name
+    }
+    log.info("PTC Metadata: %s", metadata)
 
     user = User.objects.filter(email=email).first()
     generated_password = False
@@ -176,34 +188,22 @@ def extras_course_enroll_user(request, enroll="1"):
             last_name=first_name,
             password=password,
         )
-
+        
     success = []
-    failed = []
     already_enrolled = []
+    failed = []
 
     is_unenroll = enroll == "0"
-
-    for course in courses:
-        try:
-            log.info("Processing course | user_id=%s | username=%s | course=%s", user.id, username, course)
-
-            if is_unenroll:
-                log.info("Unenrolling user | user_id=%s | username=%s | course=%s", user.id, username, course)
-                deactivate_enrollments(user, course)
-                success.append(course)
-                continue
-
-            add_enrollment(user.username,course)
-            success.append(course)
-            log.info("Course enrollment completed | user_id=%s course=%s", user.id, course)
-
-        except CourseEnrollmentExistsError:
-            log.info("User already enrolled | user_id=%s course=%s", user.id, course)
-            already_enrolled.append(course)
-
-        except Exception as exc:
-            log.exception("Course enrollment failed | user_id=%s course=%s", user.id, course)
-            failed.append({"course": course, "error": str(exc)})
+    courses = get_unique_courses(payload.get("courses", []), course_config.get("courses", []))
+    log.info("Courses prepared | count=%s", len(courses), extra={"courses": courses})
+    
+    if not enable_ptc:    
+        success, already_enrolled, failed = enroll_user_in_courses(user, courses, is_unenroll)
+    else:
+        log.info("Creating PTC Record for user: %s | ptc_type=%s | courses=%s", user.username, ptc_type, courses)
+        ptc_record = _create_user_ptc_info_record(user, ptc_type, courses, metadata)
+        if ptc_record:
+            log.info("PTC Record created")
 
     mail_details = course_config.get("mail_details", {})
 

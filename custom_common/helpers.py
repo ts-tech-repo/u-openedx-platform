@@ -2,25 +2,26 @@ import logging
 import re
 import secrets
 import string
+import requests
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMultiAlternatives, send_mail
-import requests
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
 
 from common.djangoapps.edxmako.shortcuts import render_to_string
 from common.djangoapps.student.helpers import do_create_account
 from common.djangoapps.util.password_policy_validators import validate_password
+from common.djangoapps.student.models import CourseEnrollment
+
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangoapps.user_authn.views.registration_form import AccountCreationForm
+from openedx.core.djangoapps.enrollments.api import add_enrollment
+from openedx.core.djangoapps.enrollments.errors import CourseEnrollmentExistsError
 
-from django.conf import settings
-from common.djangoapps.student.models import CourseEnrollment
 from opaque_keys.edx.keys import CourseKey
 
-
 log = logging.getLogger("edx.student")
-
 
 def create_user(
     username: str,
@@ -95,6 +96,33 @@ def deactivate_enrollments(
         updated,
     )
 
+def enroll_user_in_courses(user, courses, is_unenroll=False):  
+    success = []
+    already_enrolled = []
+    failed = []
+    username = user.username
+    for course in courses:
+        try:
+            log.info("Processing course | user_id=%s | username=%s | course=%s", user.id, username, course)
+            if is_unenroll:
+                log.info("Unenrolling user | user_id=%s | username=%s | course=%s", user.id, username, course)
+                deactivate_enrollments(user, course)
+                success.append(course)
+                continue
+
+            add_enrollment(user.username,course)
+            success.append(course)
+            log.info("Course enrollment completed | user_id=%s course=%s", user.id, course)
+
+        except CourseEnrollmentExistsError:
+            log.info("User already enrolled | user_id=%s course=%s", user.id, course)
+            already_enrolled.append(course)
+
+        except Exception as exc:
+            log.exception("Course enrollment failed | user_id=%s course=%s", user.id, course)
+            failed.append({"course": course, "error": str(exc)})
+            
+    return success, already_enrolled, failed
 
 def generate_username(email: str) -> str:
     """

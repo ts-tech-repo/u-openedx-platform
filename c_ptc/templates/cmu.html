@@ -196,6 +196,9 @@ p{
     html {
       scroll-behavior: smooth;
     }
+.d-none{
+  display: none !important;
+}    
 </style>
 <body class="home">
   <header class="header innerpage-menu confirmation-pg">
@@ -221,7 +224,7 @@ p{
           <div class="col-md-12 logo">
             <h1 class="text-center"><strong>Program Terms and Conditions</strong></h1>
             <h2 class="text-center">AI for Business | Carnegie Mellon University</h2>
-            <table class="center" {% if data['timestamp'] %} style = "width: 96%" {% endif %}>
+            <table class="center">
               <tr>
                 <td>
                   <b>Participant Name:</b>
@@ -229,7 +232,7 @@ p{
                   <br>
                   <b>(</b>hereinafter referred to as <b>"Participant")</b>
                 </td>
-                <td>{{data['name']}}</td>
+                <td>${name}</td>
               </tr>
 
               <tr>
@@ -239,7 +242,7 @@ p{
                   <br>
                   <b>(</b>hereinafter referred to as <b>"Institution")</b>
                 </td>
-                <td>{{data['institution']}}</td>
+                <td>${institution}</td>
               </tr>
 
               <tr>
@@ -249,7 +252,7 @@ p{
                   <br>
                   <b>(</b>hereinafter referred to as <b>"Program Name")</b>
                 </td>
-                <td>{{data['program_name']}}</td>
+                <td>${program_name}</td>
               </tr>
 
               <tr>
@@ -259,7 +262,7 @@ p{
                   <br>
                   <b>(</b>Hereinafter referred to as <b>"Platform")</b>
                 </td>
-                <td><a href="{{data['platform_url']}}" target="_blank">{{data['platform_url']}}</a></td>
+                <td><a href="${platform_url}" target="_blank">${platform_url}</a></td>
               </tr>
             </table>
 
@@ -286,11 +289,11 @@ p{
               <table class="profile" >
                 <tr id="name_tr">
                   <td>Name : </td>
-                  <td>{{data['name']}}</td>
+                  <td>${name}</td>
                 </tr>
                 <tr id="email_tr">
                   <td>Email : </td>
-                  <td>{{data['email']}}</td>
+                  <td>${email}</td>
                 </tr>
               </table>
           </div>
@@ -433,6 +436,7 @@ p{
       src="https://img.icons8.com/parakeet-line/100/circled-up.png" alt="circled-up" /></button>
   <div class="form-group btn-wrap btn-wrap2"> 
       <button id="form-submit-button" class="btn btn-simple newbtn text-center" data-disabled="true">Proceed</button>
+      <div id="error-message" class="d-none"></div>
   </div>
 <footer>
   <div class="container">
@@ -474,36 +478,55 @@ $(function(){
     
     $("#form-submit-button").click(function() {
     if ($('#checkme').is(":checked")) {
-    	if("{{data['ptcId']}}".length == 0) {
-            window.close();
-    	} else {
-            $('#form-submit-button')[0].innerHTML = '<i class="fa fa-refresh fa-spin" id="loader" ></i>&nbsp; processing...'
-            $('#form-submit-button').attr('disabled', true);
-    		$.ajax({
-    	    	url: 'ptc/submit/{{data["ptcType"]}}',
-    	    	traditional: true,
-    	    	type: 'POST',
-    	    	success: function(response)
-    	    	{
-                    if(response === "success") {
-                        let inIframe = false;
-                        try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
-                        if (inIframe) {
-                            window.parent.postMessage("refresh_parent", "*");
-                        } else {
-                            window.location.href = "/confirmation";
-                        }
-                    } else {
-                        window.location.reload(); //instead show error message below submit button and enable submit button
-                    }
-    	    	}
-    	  });
-    	}
-    } else {
-      $('html, body').animate({
-            scrollTop: 550
-        }, 50);
-    }
-    });
+      $('#form-submit-button')[0].innerHTML = '<i class="fa fa-refresh fa-spin" id="loader" ></i>&nbsp; processing...'
+      $('#form-submit-button').attr('disabled', true);
+      if(!$('#error-message').hasClass('d-none')) {
+          $('#error-message').addClass('d-none');
+      }
+      $.ajax({
+        url: 'ptc/submit/${ptc_type}',
+        traditional: true,
+        type: 'POST',
+        success: function(response)
+        {
+          if(response["error"] === false) {
+              let inIframe = false;
+              try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
+              if (inIframe) {
+                  window.parent.postMessage("refresh_parent", "*");
+              } else {
+                  window.location.href = "/confirmation";
+              }
+          } else {
+              message = response["message"];
+              $('#error-message').removeClass('d-none');
+              $('#error-message')[0].innerHTML = message;
+              $('#form-submit-button')[0].innerHTML = 'Proceed';
+              $('#form-submit-button').attr('disabled', false);
+          }
+        },
+        error: function(xhr, status, error) {
+          console.log('Error occured', xhr, status, error);
+          $('#form-submit-button')[0].innerHTML = 'Proceed';
+          $('#form-submit-button').attr('disabled', false);
+
+          if (xhr["status"] == 0) {
+              message = "You are offline. Please check your internet connection!";
+          } else if (xhr["responseJSON"] !== undefined && xhr["responseJSON"]["message"] !== undefined) {
+              message = xhr["responseJSON"]["message"];
+          } else {
+              message = "Unable to process data. Please try again!";
+          }
+
+          $('#error-message').removeClass('d-none');
+          $('#error-message')[0].innerHTML = message;
+        }
+  });
+  } else {
+    $('html, body').animate({
+          scrollTop: 550
+      }, 50);
+  }
+  });
 });
 </script>
