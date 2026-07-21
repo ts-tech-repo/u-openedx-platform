@@ -60,6 +60,11 @@ def get_post_login_ptc(request):
     log.info("[PTC] c_ptc configuration=%s", c_ptc)
 
     types = c_ptc.get("type", [])
+    enabled = c_ptc.get("enabled", True)
+    
+    if not enabled:
+        log.info("[PTC] c_ptc is disabled.")
+        return None
 
     if not types:
         log.warning("[PTC] No PTC types configured.")
