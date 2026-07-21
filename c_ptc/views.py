@@ -118,12 +118,13 @@ def get_post_login_ptc(request):
         "mandatory": c_ptc.get("mandatory", True),
         "container_height": c_ptc.get("CONTAINER_HEIGHT", "70vh"),
         "container_width": c_ptc.get("CONTAINER_WIDTH", "40%"),
+        "ptc_submitted": user_ptc_info.submitted_at is not None,
     }
 
     log.info("[PTC] Returning response=%s", data)
     response["data"] = data
 
-    return response
+    return JsonResponse(response)
 
 @login_required   
 def fetch_ptc(request, ptc_type):
