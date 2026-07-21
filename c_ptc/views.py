@@ -36,6 +36,11 @@ def get_post_login_ptc(request):
     """
     Returns PTC popup configuration for the authenticated user.
     """
+    response = {
+        "error": False,
+        "message": "PTC configuration fetched successfully.",
+        "data": {},
+    }
     user = _get_user(request)
 
     log.info(
@@ -55,7 +60,9 @@ def get_post_login_ptc(request):
 
     if not c_ptc:
         log.info("[PTC] c_ptc configuration not found.")
-        return None
+        response["error"] = True
+        response["message"] = "c_ptc configuration not found."
+        return response
 
     log.info("[PTC] c_ptc configuration=%s", c_ptc)
 
@@ -64,11 +71,15 @@ def get_post_login_ptc(request):
     
     if not enabled:
         log.info("[PTC] c_ptc is disabled.")
-        return None
+        response["error"] = True
+        response["message"] = "c_ptc is disabled."
+        return response
 
     if not types:
         log.warning("[PTC] No PTC types configured.")
-        return None
+        response["error"] = True
+        response["message"] = "No PTC types configured."
+        return response
 
     log.info("[PTC] Configured PTC types=%s", types)
     
@@ -89,7 +100,9 @@ def get_post_login_ptc(request):
             "[PTC] No pending PTC found. user=%s",
             user.username,
         )
-        return None
+
+        response["message"] = "No pending PTC found."
+        return response
 
     log.info(
         "[PTC] Pending PTC found. id=%s ptc_type=%s",
@@ -97,8 +110,8 @@ def get_post_login_ptc(request):
         user_ptc_info.ptc_type,
     )
 
-    response = {
-        "popup_url": request.build_absolute_uri(
+    data = {
+        "ptc_url": request.build_absolute_uri(
             f"/c_ptc/fetch/{user_ptc_info.ptc_type}"
         ),
         "ptc_type": user_ptc_info.ptc_type,
@@ -107,7 +120,8 @@ def get_post_login_ptc(request):
         "container_width": c_ptc.get("CONTAINER_WIDTH", "40%"),
     }
 
-    log.info("[PTC] Returning response=%s", response)
+    log.info("[PTC] Returning response=%s", data)
+    response["data"] = data
 
     return response
 
