@@ -1199,6 +1199,7 @@ INSTALLED_APPS = [
     # Custom Apps
     "custom_cms",
     "custom_common",
+    "c_ptc.apps.CustomPTCConfig",
 ]
 
 
