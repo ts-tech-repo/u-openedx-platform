@@ -5,6 +5,7 @@ Views for Learner Home
 import logging
 from collections import OrderedDict
 
+from c_ptc.helpers import _get_post_login_ptc_data
 from completion.exceptions import UnavailableCompletionData
 from completion.utilities import get_key_to_last_completed_block
 from django.conf import settings
@@ -554,6 +555,7 @@ class InitializeView(APIView):  # pylint: disable=unused-argument
             "unfulfilledEntitlements": unfulfilled_entitlements,
             "socialShareSettings": social_share_settings,
             "suggestedCourses": suggested_courses,
+            "ptc_config": _get_post_login_ptc_data(self.request, user).get("data", {}),
         }
 
         context = {

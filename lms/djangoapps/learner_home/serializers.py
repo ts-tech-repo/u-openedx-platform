@@ -613,6 +613,8 @@ class LearnerDashboardSerializer(serializers.Serializer):
     suggestedCourses = serializers.ListField(
         child=SuggestedCourseSerializer(), allow_empty=True
     )
+    ptc_config = serializers.JSONField(allow_null=True)
+
 
     def get_courses(self, instance):
         """

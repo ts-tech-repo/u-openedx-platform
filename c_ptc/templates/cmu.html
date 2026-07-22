@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>PTC - Talentsprint</title>
+<meta charset="UTF-8">
+</head>
+
+<link rel="shortcut icon" href="https://talentsprint.com/misc/files/img/favicon.ico">
+<link href="https://fonts.googleapis.com/css?family=Nunito+Sans:200,300,400,600,700,800,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:300,400,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+body, p {font-family: 'Roboto Condensed',sans-serif; text-align: justify;}
+body {font-size: 14px;line-height: 1.42857143;color: #333;background-color: #fff;}
+body { margin: 0;}
+html {font-size: 10px;;-webkit-tap-highlight-color: rgba(0,0,0,0);}
+html {-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;}
+header.header.innerpage-menu.confirmation-pg {margin: 0;}
+.header {position: relative;background-position: center;background-size: cover;}
+article, aside, details, figcaption, figure, footer, header, hgroup, main, menu, nav, section, summary {display: block;}
+* {box-sizing: border-box;}
+.btn-group-vertical>.btn-group:after, .btn-group-vertical>.btn-group:before, .btn-toolbar:after, .btn-toolbar:before, .clearfix:after, .clearfix:before, .container-fluid:after, .container-fluid:before, .container:after, .container:before, .dl-horizontal dd:after, .dl-horizontal dd:before, .form-horizontal .form-group:after, .form-horizontal .form-group:before, .modal-footer:after, .modal-footer:before, .modal-header:after, .modal-header:before, .nav:after, .nav:before, .navbar-collapse:after, .navbar-collapse:before, .navbar-header:after, .navbar-header:before, .navbar:after, .navbar:before, .pager:after, .pager:before, .panel-body:after, .panel-body:before, .row:after, .row:before {display: table;content: " ";}
+.btn-group-vertical>.btn-group:after, .btn-toolbar:after, .clearfix:after, .container-fluid:after, .container:after, .dl-horizontal dd:after, .form-horizontal .form-group:after, .modal-footer:after, .modal-header:after, .nav:after, .navbar-collapse:after, .navbar-header:after, .navbar:after, .pager:after, .panel-body:after, .row:after {clear: both;} 
+.home .container {width: 95%;}
+.container {padding-right: 15px;padding-left: 15px;margin-right: auto;margin-left: auto;width: 95%;}
+.row {margin-right: -15px;margin-left: -15px;} 
+.navbar-default .navbar-brand {color: #777;}
+.navbar-brand {float: left;height: 50px;font-size: 18px;line-height: 20px;}
+.navbar-fixed-bottom, .navbar-fixed-top {position: fixed;right: 0;left: 0;z-index: 1030;}
+.navbar-fixed-bottom .navbar-collapse, .navbar-fixed-top .navbar-collapse {min-height: 0px;}
+.navbar-default .navbar-collapse, .navbar-default .navbar-form {border-color: #e7e7e7;}
+.navbar-fixed-bottom .navbar-collapse, .navbar-fixed-top .navbar-collapse {max-height: 340px;}
+.bannersection {padding-top: 40px;padding-bottom: 35px;min-height: 435px;}
+nav.navbar.navbar-default.navbar-fixed-top {top: 0;height: 75px;}
+button.navbar-toggle{display: none;}
+.innerpage-menu .navbar-default {background-color: #fff;border-color: #fff;box-shadow: 0 0 6px 0 #ddddddb3;}
+.innerpage-menu .navbar-brand {padding: 4px 15px;}
+nav.navbar img {height: 54px;display: inline-block;margin: 6px 0;}
+img {vertical-align: middle;}
+img {border: 0;}
+header.header.innerpage-menu.confirmation-pg .bannersection h1 { font-weight: 400; padding: 10px 0 0; color: #333; line-height: 116%; margin-bottom: 30px;} 
+.text-center {text-align: center;}
+header.header.innerpage-menu.confirmation-pg p { font-size: 18px;margin-top:2%;} 
+.logo h1, .annexure h1 { font-size: 42px !important; } 
+.logo ul, .annexure ul { list-style: decimal; font-weight: 500;padding-left: 0px; }
+.logo ul li, .annexure ul li { font-size: 18px; margin-bottom: 5px; margin-left: 20px; font-weight: 400; padding-left: 0px;} 
+.logo h2, .annexure h2 {/* padding: 20px 0 0; */font-size: 22px;color: #000;margin-bottom: 20px;} 
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {font-family: inherit;}
+h1 {margin: .67em 0;font-size: 2em;}
+b, strong {font-weight: 700;}
+.annexure ol li{padding-left: 0px;}
+header.header.innerpage-menu.confirmation-pg p {font-size: 18px;line-height: 25px;margin-left: 6px;}
+
+.h1, .h2, .h3, h1, h2, h3 {margin-top: 20px;}
+.h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {font-weight: 500;line-height: 1.1;}
+
+p {margin: 0 0 10px;}
+a, a:focus, a:hover {color: #1b74c2;}
+a:focus, a:hover, a {outline: none!important;}
+
+input[type=checkbox], input[type=radio] {margin: 4px 0 0;line-height: normal;}
+input[type=checkbox], input[type=radio] {box-sizing: border-box;padding: 0;}
+button, input, select, textarea {font-family: inherit;font-size: inherit;}
+
+p.terms-condition-label label { font-weight: 600; color: #111; margin-left: 15px; font-size: 15px; } 
+a { text-decoration: underline; } 
+p.terms-condition-label { display: inline-block; text-align: center; width: 100%; font-size: 12px; font-weight: 400; margin-top: 0; margin-bottom: 0; padding-left: 14px; }
+p.terms-condition-label label { font-weight: 600; color: #111; font-size: 16px; } 
+input[type=checkbox] { display: none; } 
+input[type=checkbox]+label { display: block; margin: 0; cursor: pointer; padding: 0; margin-top: 0; line-height: 140%; text-align: left; } 
+input[type=checkbox]:checked+label:before { background-color: #3cb371; border-color: #3cb371; color: #fff; }
+label {max-width: 100%;}
+input#checkme { position: absolute; left: -4px; top: -1px;} 
+input[type=checkbox]+label:before { content: "\2714"; border: 0.1em solid #cacaca; border-radius: 0.2em; display: inline-block; width: 18px; height: 13px; padding-left: 0; padding-bottom: 2px;padding-top: 3px; margin-left: -20px;  margin-right: 3px; vertical-align: bottom; color: transparent; top: 0px; text-align: center;font-size: 11px; line-height: 120%;     margin-top: 31px;}
+
+table{width: 90%;}
+table {background-color: transparent;}
+table {border-spacing: 0;border-collapse: collapse;}
+table.center, table.annexurea { margin-left: auto; margin-right: auto;font-size: 16px; }
+.center td{border: 1px solid gray;width: 50%;padding: 1%;} 
+table.annexurea {width: 90%!important}
+.annexurea td{border: 1px solid gray;padding: 1%;} 
+.annexurea th{text-align: center;} 
+table.annexurea ul li{font-size: 16px;}
+table.annexurea td p{font-size: 16px!important}
+
+table.escalation-matrix{width: 90%;margin-left: 2%;font-size: 14px;}
+ol{font-weight: bold;font-size: 18px;}
+
+button#form-submit-button {width: 15%;background: #00a651;color: #fff;padding: 11px 33px;font-size: 19px;cursor:pointer;margin-top: 10px;margin-right: auto;margin-left: auto;display: block;}
+.btn.disabled, .btn[disabled], fieldset[disabled] .btn {cursor: not-allowed !important;box-shadow: none;opacity: .65;}
+.btn {display: inline-block;padding: 6px 12px;margin-bottom: 0;font-size: 14px;font-weight: 400;line-height: 1.42857143;text-align: center;white-space: nowrap;vertical-align: middle;touch-action: manipulation;user-select: none;border: 1px solid transparent;border-radius: 4px;}
+button, select {text-transform: none;}
+button {overflow: visible;}
+footer#site-footer {padding: 5% 1px;}
+.Profile_details {font-size: 18px;line-height: 35px;margin-bottom: 30px;}
+.Profile_details table{width: 50%;}
+
+table th, td {border: 1px solid gray;padding: 1%;} 
+table.escalation-matrix tr, td{border: 1px solid gray;padding: 1%;}
+table.escalation-matrix td{border: 1px solid gray;padding: 1%;}
+table.profile tr, td {border: none;padding: 1%;padding-left: 0px;}
+table.profile tr td:first-child{width: 20%;text-align: center;}
+
+.col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {position: relative;min-height: 1px;padding-right: 15px;padding-left: 15px;}
+/* #name_tr td, #email_tr td, #phone_tr td, #college_tr td {
+  text-align: left !important;
+} */
+.profile{
+  margin-left: 30px;
+}
+p{
+  text-indent: 30px;
+}
+.scholarship_schedule td:nth-child(1){
+  text-align: center;
+}
+.scholarship_schedule td{
+  vertical-align: text-top;
+}
+.career-services-list-items li{
+    list-style-type: disc;
+}
+.table_ul{
+  margin: 0;
+  margin-left: 20px;
+}
+.ol_content li {
+  font-weight: normal;
+}
+
+@media (min-width: 768px){
+.navbar-fixed-bottom, .navbar-fixed-top {border-radius: 0;}
+}
+@media (min-width: 768px){
+.navbar-collapse {width: auto;border-top: 0;-webkit-box-shadow: none;box-shadow: none;}
+}
+@media (min-width: 768px){
+.navbar-collapse.collapse {display: block!important;height: auto!important;padding-bottom: 0;overflow: visible!important;}
+}
+@media (min-width: 768px){
+.navbar-fixed-bottom .navbar-collapse, .navbar-fixed-top .navbar-collapse, .navbar-static-top .navbar-collapse {padding-right: 0;padding-left: 0;}
+}
+@media (min-width: 992px){
+.col-md-12 {width: 100%;}
+}
+@media (min-width: 992px){
+.col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9 {float: left;}
+}
+
+@media (min-width: 768px){
+.navbar-header {float: left;}
+}
+@media (min-width: 768px){
+.navbar>.container .navbar-brand, .navbar>.container-fluid .navbar-brand {margin-left: -15px;}
+}
+@media (min-width: 1200px){
+.col-lg-12 {width: 100%;}
+}
+@media (min-width: 1200px){
+.col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9 {float: left;}
+}
+@media only screen and (min-device-width : 320px) and (max-device-width : 480px) {
+    .home .container {width: 100%;}
+    .navbar-default .navbar-toggle { border-color: #ddd; display: none; } 
+    ul table{ margin-left: 0px!important; } 
+    .Profile_details table {width: 100%;}
+    header.header.innerpage-menu.confirmation-pg p {margin-top: 8%;margin-bottom: 5%;}
+    button#form-submit-button {width: 45%;}
+    table.profile tr td:first-child {width: 20%;}
+    table.escalation-matrix {width: 100%;}
+    table.escalation-matrix td {padding: 0%;text-align: center;}
+    table.escalation-matrix th {padding: 0%;text-align: center;}
+    .lms-link{font-size: xx-small;}
+}
+#myBtn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 30px;
+      z-index: 99;
+      border: none;
+      outline: none;
+      background-color: white;
+      color: white;
+      cursor: pointer;
+
+      border-radius: 10px;
+      font-size: 18px;
+    }
+
+    #myBtn:hover {
+      z-index: 99;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+.d-none{
+  display: none !important;
+}
+#error-message {
+  color: red;
+  margin-top: 8px;
+  text-align: center;
+}    
+</style>
+<body class="home">
+  <header class="header innerpage-menu confirmation-pg">
+    <!-- <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="navbar-header">
+              <button type="button" data-target="#navbarCollapse" data-toggle="collapse" class="navbar-toggle"> <span
+                  class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span>
+                <span class="icon-bar"></span> </button>
+              <a class="navbar-brand">
+                <img src="https://static.talentsprint.com/ptc/lms-{{data['ptcType']}}.png" alt="TS" class="dest-logo">
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav> -->
+    <div class="bannersection">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12 logo">
+            <h1 class="text-center"><strong>Program Terms and Conditions</strong></h1>
+            <h2 class="text-center">AI for Business | Carnegie Mellon University</h2>
+            <table class="center">
+              <tr>
+                <td>
+                  <b>Participant Name:</b>
+                  <br>
+                  <br>
+                  <b>(</b>hereinafter referred to as <b>"Participant")</b>
+                </td>
+                <td>${name}</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <b>Institution:</b>
+                  <br>
+                  <br>
+                  <b>(</b>hereinafter referred to as <b>"Institution")</b>
+                </td>
+                <td>${institution}</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <b>Program Name:</b>
+                  <br>
+                  <br>
+                  <b>(</b>hereinafter referred to as <b>"Program Name")</b>
+                </td>
+                <td>${program_name}</td>
+              </tr>
+
+              <tr>
+                <td>
+                  <b>Platform URL</b>
+                  <br>
+                  <br>
+                  <b>(</b>Hereinafter referred to as <b>"Platform")</b>
+                </td>
+                <td><a href="${platform_url}" target="_blank">${platform_url}</a></td>
+              </tr>
+            </table>
+
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12 logo">
+            <table style="margin-left:30px; width: 100%;">
+                <tr>
+                    <td style="width: 1%;vertical-align: initial;">
+                        <p class="terms-condition-label" style="margin-top: 3%;text-indent: initial;">
+                        <input type="checkbox" id="checkme" name="checkme" value=""  required="required"  />
+                        <label for="checkme"></label>
+                        </p>
+                    </td>
+                    <td style="width: 98%;vertical-align: initial;">
+                        <p style="text-indent: initial;"><b>I hereby confirm that I have enrolled for the above Program and will adhere to the Program Terms and Conditions (hereinafter referred to as "PTC"). I have read and understood the PTC detailed herein.</b>
+                        </p>
+                    </td>
+                </tr>
+              </table>
+              
+              <table class="profile" style="width:50%; font-size: 18px;">
+                <tr id="name_tr">
+                  <td>Name:&nbsp;</td>
+                  <td>${name}</td>
+                </tr>
+                <tr id="email_tr">
+                  <td>Email:&nbsp;</td>
+                  <td>${email}</td>
+                </tr>
+              </table>
+          </div>
+        </div>
+
+        
+
+        <div class="row">
+          <div class="col-md-12 annexure">
+            <div class="col-md-12 annexure">
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>1. Eligibility</strong></h2>
+              <p style="text-indent: 0;">The Participant hereby represents that he/she is above the age of 18 (eighteen) years and understands that he/she must be 18 years of age or older to participate in this Program.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>2. Program Access</strong></h2>
+              <p style="text-indent: 0;">All Services and resources provided by TalentSprint are legally available for access only by users enrolled in the Program. The Participant is strictly prohibited from sharing any Program materials or Program-related information with any person who is not enrolled in the Program.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>3. Disclaimer of Warranties</strong></h2>
+              <p style="text-indent: 0;">The Participant's access to and use of the Services, Third Party Products, Platform, and Program is at his/her own risk. The Participant understands and agrees that the Services and Third Party Products are provided on an "AS IS" and "AS AVAILABLE" basis. Without limiting the foregoing, TalentSprint disclaims all warranties and conditions, whether express or implied, including warranties of title, merchantability, fitness for a particular purpose, and non-infringement.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>4. Limitation of Liability</strong></h2>
+              <p style="text-indent: 0;">To the extent permitted by applicable law, TalentSprint shall not be liable for any indirect, incidental, special, consequential, punitive, or exemplary damages, including loss of profits, revenues, data, goodwill, or other intangible losses resulting from:</p> 
+              <ol type="a" class="ol_content">
+                <li>The Participant's access to, use of, or inability to access or use the Platform, Services, or Third Party Products</li>
+                <li>Any content or material available through the Platform, including classes and Program content</li>
+                <li>Unauthorized access to, use of, or alteration of any content posted by the Participant on the Platform</li>
+              </ol>
+              <p>Upon completion of the Program and issuance and acceptance of any certificate, the Institution and/or TalentSprint shall have no further liability toward the Participant in relation to the Program. The Participant agrees to waive any further claims against the Institution and/or TalentSprint relating to the Program or any Program deliverables.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>5. Violations and Remedies</strong></h2>
+              <p style="text-indent: 0;">The Participant agrees that any violation of these Program Terms and Conditions or any annexures thereto constitutes an unlawful and unfair business practice and may cause irreparable harm to TalentSprint for which monetary damages may be inadequate.</p>
+               <p style="text-indent: 0;">Accordingly, TalentSprint reserves the right to suspend or terminate the Participant's Account and/or access to the Services or Platform and may seek injunctive, equitable, or other relief as permitted by law. Such remedies shall be in addition to any other remedies available at law or in equity.</p>
+                <p style="text-indent: 0;">If TalentSprint initiates legal action arising from a violation of these Program Terms and Conditions, TalentSprint shall be entitled to recover all reasonable attorneys' fees, legal costs, and expenses in addition to any other relief granted.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>6. Program Changes</strong></h2>
+              <p style="text-indent: 0;">TalentSprint and/or the Institution regularly review their policies, procedures, services, and Program offerings. TalentSprint and/or the Institution reserve the right to modify, update, suspend, or terminate any aspect of the Program, Services, Platform, Program content, Program format, or any related policies by issuing written notification.</p>
+              <p style="text-indent: 0;">Any such changes shall become effective upon notification. Continued participation in the Program or use of the Services following such notice shall constitute acceptance of the revised terms.</p>
+              <p style="text-indent: 0;">These Program Terms and Conditions supersede all previous oral and written communications relating to the subject matter herein and constitute a binding agreement between TalentSprint and the Participant.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>7. Academic Policies and Certification</strong></h2>
+              <p style="text-indent: 0;">The Participant shall be evaluated and certified in accordance with policies established by the Institution. Such policies shall be binding upon the Participant.</p>
+              <p style="text-indent: 0;">The Institution's decisions regarding quizzes, examinations, assignments, projects, deliverables, certification, grading, and academic standing shall be final. The Institution reserves the right to resolve any ambiguity relating to grades, assessments, or certification and may modify, update, or amend such policies from time to time.</p>
+              <p style="text-indent: 0;">Certificates shall be awarded only to Participants who satisfy all applicable Program requirements.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>8. Participant Conduct</strong></h2>
+              <p style="text-indent: 0;">The Participant is expected to treat all members of the Institution and TalentSprint community, as well as fellow Participants, with respect and professionalism.</p>
+              <p style="text-indent: 0;">The Participant shall not engage in intimidation, harassment, abuse, stalking, bullying, threatening behavior, derogatory conduct, defamation, impersonation, gambling, dissemination of inappropriate or indecent content, hate speech, illegal activities, intellectual property infringement, or any conduct that infringes upon the rights of any member of the community.</p>
+              <p style="text-indent: 0;">The Participant shall not, directly or indirectly, disparage, defame, or make any negative, defamatory, or derogatory statements, whether oral or written, or engage in conduct that may harm the business, reputation, or goodwill of TalentSprint, the Institution, their affiliates, partners, officers, directors, employees, agents, or shareholders.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>9. Intellectual Property and Content Ownership</strong></h2>
+              <p style="text-indent: 0;">All content made available in connection with the Services, including text, images, graphics, data, software, video, audio, databases, trademarks, logos, and related materials, is owned by the Institution, TalentSprint, or licensed third parties.</p>
+              <p style="text-indent: 0;">Any reproduction, modification, adaptation, distribution, translation, transmission, republication, resale, commercial exploitation, or other unauthorized use of such content is strictly prohibited.</p>
+              <p style="text-indent: 0;">The Services are provided solely for the Participant's personal, non-commercial, and lawful use in connection with the Program. Nothing contained in the Services shall be construed as granting any license or right to use any intellectual property without the prior written consent of the applicable rights holder.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>10. Program Delivery and Technology Requirements</strong></h2>
+              <p style="text-indent: 0;">The Program will be delivered through TalentSprint's Platform and through third-party hardware, software, tools, and technology platforms ("Third Party Products").</p>
+              <p style="text-indent: 0;">The Participant agrees to use such Platforms and Third Party Products in accordance with applicable instructions, user manuals, Platform Terms, and Program requirements. By accepting these Program Terms and Conditions, the Participant also acknowledges and accepts the applicable Platform Terms.</p>
+              <p style="text-indent: 0;">TalentSprint may create and provide login credentials for systems and tools used in connection with the Program.</p>
+              <p style="text-indent: 0;">The Participant is responsible for maintaining adequate internet connectivity and hardware required for participation in the Program. TalentSprint shall not be responsible for any loss, interruption, or inability to participate arising from internet connectivity issues, hardware failures, or technology limitations at the Participant's end.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>11. Scholarships and Incentives</strong></h2>
+              <p style="text-indent: 0;">TalentSprint and/or the Institution reserve the sole and absolute discretion to offer scholarships, incentives, discounts, or other schemes from time to time based on eligibility criteria, dates, categories of Participants, or any other factors they deem appropriate.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>12. Account Registration and Security</strong></h2>
+              <p style="text-indent: 0;">The Participant shall ensure that all registration information ("Account Information") is accurate, current, complete, and not misleading and shall promptly notify TalentSprint of any changes.</p>
+              <p style="text-indent: 0;">TalentSprint may suspend or terminate an Account where it reasonably believes that submitted information is inaccurate, incomplete, false, or misleading.</p>
+              <p style="text-indent: 0;">The Participant is solely responsible for all activity occurring under the Participant's Account and shall maintain the confidentiality and security of all login credentials and Account information.</p>
+              <p style="text-indent: 0;">Each registration is intended for use by a single Participant only. The Participant shall not:</p>
+              <ol type="a" class="ol_content">
+                <li>Permit any other person to use the Participant's login credentials</li>
+                <li>Allow access to the Platform by unregistered individuals through shared access arrangements</li>
+                <li>Make a single Account available to multiple users</li>
+                <li>Sell, transfer, trade, or otherwise assign an Account</li>
+              </ol>
+              <p style="text-indent: 0;">The Participant shall promptly notify TalentSprint of any unauthorized use of an Account or any security breach. TalentSprint shall not be liable for losses arising from unauthorized use of an Account.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>13. Use Restrictions</strong></h2>
+              <p style="text-indent: 0;">When using the Platform, Services, Third Party Products, or Program resources, the Participant shall not:</p>
+              <ol type="a" class="ol_content">
+                <li>Interfere with or disrupt the use of the Platform by other users</li>
+                <li>Introduce viruses, malware, or other malicious code</li>
+                <li>Remove copyright, trademark, or proprietary notices</li>
+                <li>Frame, mirror, scrape, crawl, reverse engineer, decompile, disassemble, or otherwise attempt to derive source code from the Platform</li>
+                <li>Circumvent Platform security measures or access restricted services</li>
+                <li>Access, search, or collect information through unauthorized automated means</li>
+                <li>Use the Services for unlawful or unauthorized purposes</li>
+                <li>Tamper with systems, networks, or technical infrastructure</li>
+                <li>Probe or test security vulnerabilities</li>
+                <li>Build or assist others in building competing products or services using information obtained from the Platform</li>
+                <li>Encourage, assist, or facilitate any of the foregoing activities</li>
+              </ol>
+              <p style="text-indent: 0;">The Platform may contain links to third-party websites or resources. TalentSprint does not control and is not responsible for the availability, accuracy, content, products, or services available through such third-party resources.</p>
+          </div>
+
+          <div class="col-md-12 annexure">
+              <h2 class="text-left"><strong>14. Additional Carnegie Mellon University-Specific Terms</strong></h2>
+              <p style="text-indent: 0;"><i>For clarity, Carnegie Mellon University is the Institution under these Program Terms and Conditions. The provisions below are additional Carnegie Mellon University-specific acknowledgments, disclaimers and limitations and should be read together with the preceding sections.</i></p>
+              <ol type="a" class="ol_content">
+                <li>This program and its information and contents are provided or made available to you for your own personal use and reference only and may not be used for any other purpose. All information provided in this program is provided or made available to you by Carnegie Mellon University on an "as is" basis. Carnegie Mellon University does not make any warranties of any kind, either express or implied, as to any matter, and all such warranties, including warranties of merchantability and fitness for a particular purpose, are expressly disclaimed, except to the extent (and only the extent) prohibited by applicable law. Without limiting the generality of the foregoing, Carnegie Mellon University does not make any warranty of any kind relating to informational content, including that it is error-free, or results to be obtained from use.</li>
+                <li>Carnegie Mellon University and its employees, faculty and staff will not be liable to you or any third party in contract, tort, warranty, strict liability, or any other legal theory for any indirect, consequential, incidental, punitive or exemplary damages or loss of profits, even if Carnegie Mellon University or any of its employees, faculty and staff has been advised of the possibility of such damages.</li>
+                <li>Carnegie Mellon university's maximum liability to you for any reason arising out of or relating to the program is limited to the amount of fees paid by you to participate in the program.</li>
+                <li>You understand that you must be 18 years of age or older to participate in this program.</li>
+                <li>The foregoing understandings, disclaimers and limitations on liability shall be governed by and construed under the laws of the commonwealth of Pennsylvania, united states of America, without regard to conflict of law provisions in that or any other jurisdiction.</li>
+                <li>By enrolling to participate in the program, you acknowledge and agree to the foregoing, with the intent to be legally bound. If you do not agree to the foregoing, you cannot enroll/participate in the program.</li>
+                <li>Carnegie Mellon University and its employees, faculty and staff are express third party beneficiaries of your acknowledgments and agreements to the foregoing.</li>
+              </ol>
+          </div>
+
+
+      </div>
+  </div>
+</div>
+  </header>
+  <button onclick="topFunction()" id="myBtn" title="Go to top"><img width="48" height="48"
+      src="https://img.icons8.com/parakeet-line/100/circled-up.png" alt="circled-up" /></button>
+  <div class="form-group btn-wrap btn-wrap2"> 
+      <button id="form-submit-button" class="btn btn-simple newbtn text-center" data-disabled="true">Proceed</button>
+      <div id="error-message" class="d-none"></div>
+  </div>
+<footer>
+  <div class="container">
+    <div class="row cpy-txt-row">
+      <div class="col-md-12">
+        <hr>
+        <p align="center" class="cpy-txt" style = "text-align: center; margin-top: 20px;">&copy; <script>document.write(new Date().getFullYear())</script> TalentSprint</p>
+      </div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
+
+<!--Jquery Minified File--> 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script> 
+
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+
+  if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+
+      for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+          }
+      }
+  }
+
+  return cookieValue;
+}
+$(function(){
+    $('img').on("error", function() {
+      $(this).attr('src', 'https://static.talentsprint.com/ptc/ts.png');
+    });
+
+    const $myButton = $('#myBtn');
+
+    // Show/hide button based on scroll position
+    $(window).on('scroll', function () {
+        if ($(window).scrollTop() > 500) {
+            $myButton.fadeIn();
+        } else {
+            $myButton.fadeOut();
+        }
+    });
+
+    // Scroll to top on click
+    $myButton.on('click', function () {
+        $('html, body').animate({ scrollTop: 0 }, 50); // Smooth scroll
+    });
+    
+    $("#form-submit-button").click(function() {
+    if ($('#checkme').is(":checked")) {
+      $('#form-submit-button')[0].innerHTML = '<i class="fa fa-refresh fa-spin" id="loader" ></i>&nbsp; processing...'
+      $('#form-submit-button').attr('disabled', true);
+      if(!$('#error-message').hasClass('d-none')) {
+          $('#error-message').addClass('d-none');
+      }
+      $.ajax({
+        url: '${ptc_submit_url}',
+        type: 'POST',
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader("X-CSRFToken", getCookie("csrftoken"));
+        },
+        success: function(response)
+        {
+          if(response["error"] === false) {
+              let inIframe = false;
+              try { inIframe = window.self !== window.top; } catch (e) { inIframe = true; }
+              if (inIframe) {
+                  window.parent.postMessage("refresh_parent", "*");
+              } else {
+                  window.location.href = "/confirmation";
+              }
+          } else {
+              message = response["message"];
+              $('#error-message').removeClass('d-none');
+              $('#error-message')[0].innerHTML = message;
+              $('#form-submit-button')[0].innerHTML = 'Proceed';
+              $('#form-submit-button').attr('disabled', false);
+          }
+        },
+        error: function(xhr, status, error) {
+          console.log('Error occured', xhr, status, error);
+          $('#form-submit-button')[0].innerHTML = 'Proceed';
+          $('#form-submit-button').attr('disabled', false);
+
+          if (xhr["status"] == 0) {
+              message = "You are offline. Please check your internet connection!";
+          } else if (xhr["responseJSON"] !== undefined && xhr["responseJSON"]["message"] !== undefined) {
+              message = xhr["responseJSON"]["message"];
+          } else {
+              message = "Unable to process data. Please try again!";
+          }
+
+          $('#error-message').removeClass('d-none');
+          $('#error-message')[0].innerHTML = message;
+        }
+  });
+  } else {
+    $('html, body').animate({
+          scrollTop: 550
+      }, 50);
+  }
+  });
+});
+</script>

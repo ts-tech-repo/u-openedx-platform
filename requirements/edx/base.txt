@@ -1307,5 +1307,8 @@ yarl==1.22.0
 zipp==3.23.0
     # via importlib-metadata
 
+zxcvbn
+pycryptodome
+
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

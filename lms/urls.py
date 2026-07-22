@@ -1054,3 +1054,15 @@ urlpatterns += [
 urlpatterns += [
     path('api/notifications/', include('openedx.core.djangoapps.notifications.urls')),
 ]
+
+# Custom LMS
+urlpatterns += [
+    path(
+        "custom/lms/",
+        include("custom_lms.urls")
+    ),
+    path(
+        "ptc/",
+        include("c_ptc.urls")
+    )
+]
