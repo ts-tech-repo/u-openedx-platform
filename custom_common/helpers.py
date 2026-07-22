@@ -294,7 +294,6 @@ def send_enrollment_email(
                     "user_id=%s | status=%s | response=%s",
                     user.id,
                     response.status_code,
-                    response.text,
                 )
                 return True
 
@@ -303,6 +302,14 @@ def send_enrollment_email(
                     "Notify API failed | user_id=%s | attempt=%s | error=%s",
                     user.id,
                     attempt,
+                    e,
+                )
+            except Exception as e:
+                log.exception(
+                    "Notify API failed | user_id=%s | attempt=%s | response=%s | error=%s",
+                    user.id,
+                    attempt,
+                    response.text,
                     e,
                 )
 

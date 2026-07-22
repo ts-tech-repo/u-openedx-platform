@@ -555,6 +555,7 @@ class InitializeView(APIView):  # pylint: disable=unused-argument
             "unfulfilledEntitlements": unfulfilled_entitlements,
             "socialShareSettings": social_share_settings,
             "suggestedCourses": suggested_courses,
+            "ptc_config": _get_post_login_ptc_data(self.request, user).get("data", {}),
         }
 
         context = {
@@ -574,7 +575,6 @@ class InitializeView(APIView):  # pylint: disable=unused-argument
             "unfulfilled_entitlement_pseudo_sessions": unfulfilled_entitlement_pseudo_sessions,
             "pseudo_session_course_overviews": pseudo_session_course_overviews,
             "programs": programs,
-            "ptc_config": _get_post_login_ptc_data(self.request, user).get("data", {}),
         }
 
         response_data = serialize_learner_home_data(learner_dash_data, context)
