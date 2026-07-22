@@ -30,7 +30,7 @@ article, aside, details, figcaption, figure, footer, header, hgroup, main, menu,
 .navbar-fixed-bottom .navbar-collapse, .navbar-fixed-top .navbar-collapse {min-height: 0px;}
 .navbar-default .navbar-collapse, .navbar-default .navbar-form {border-color: #e7e7e7;}
 .navbar-fixed-bottom .navbar-collapse, .navbar-fixed-top .navbar-collapse {max-height: 340px;}
-.bannersection {padding-top: 100px;padding-bottom: 35px;min-height: 435px;}
+.bannersection {padding-top: 80px;padding-bottom: 35px;min-height: 435px;}
 nav.navbar.navbar-default.navbar-fixed-top {top: 0;height: 75px;}
 button.navbar-toggle{display: none;}
 .innerpage-menu .navbar-default {background-color: #fff;border-color: #fff;box-shadow: 0 0 6px 0 #ddddddb3;}
@@ -44,7 +44,7 @@ header.header.innerpage-menu.confirmation-pg p { font-size: 18px;margin-top:2%;}
 .logo h1, .annexure h1 { font-size: 42px !important; } 
 .logo ul, .annexure ul { list-style: decimal; font-weight: 500;padding-left: 0px; }
 .logo ul li, .annexure ul li { font-size: 18px; margin-bottom: 5px; margin-left: 20px; font-weight: 400; padding-left: 0px;} 
-.logo h2, .annexure h2 { padding: 20px 0 0; font-size: 22px; color: #000; margin-bottom: 20px; } 
+.logo h2, .annexure h2 {/* padding: 20px 0 0; */font-size: 22px;color: #000;margin-bottom: 20px;} 
 .h1, .h2, .h3, .h4, .h5, .h6, h1, h2, h3, h4, h5, h6 {font-family: inherit;}
 h1 {margin: .67em 0;font-size: 2em;}
 b, strong {font-weight: 700;}
@@ -103,9 +103,9 @@ table.profile tr, td {border: none;padding: 1%;padding-left: 0px;}
 table.profile tr td:first-child{width: 20%;text-align: center;}
 
 .col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {position: relative;min-height: 1px;padding-right: 15px;padding-left: 15px;}
-#name_tr td, #email_tr td, #phone_tr td, #college_tr td {
+/* #name_tr td, #email_tr td, #phone_tr td, #college_tr td {
   text-align: left !important;
-}
+} */
 .profile{
   margin-left: 30px;
 }
@@ -291,7 +291,7 @@ p{
                 </tr>
               </table>
               
-              <table class="profile" >
+              <table class="profile" style="width:50%; font-size: 18px;">
                 <tr id="name_tr">
                   <td>Name:&nbsp;</td>
                   <td>${name}</td>
