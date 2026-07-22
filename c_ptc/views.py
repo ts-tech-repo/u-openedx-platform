@@ -7,16 +7,14 @@ from django.contrib.auth.decorators import login_required
 
 import logging
 
-from common.djangoapps.edxmako.makoloader import MakoLoader
 from common.djangoapps.edxmako.shortcuts import render_to_response
 from custom_common.helpers import enroll_user_in_courses
 
 from openedx.core.djangoapps.site_configuration import (
     helpers as configuration_helpers,
 )
-from openedx.core.djangoapps.xblock.runtime.shims import TemplateDoesNotExist
 
-from c_ptc.helpers import _get_user
+from c_ptc.helpers import _get_user, _get_post_login_ptc_data
 from c_ptc.models import UserPtcInfo
 
 log = logging.getLogger(__name__)
@@ -30,100 +28,10 @@ def health(request):
             "status": "ok",
         }
     )
+@login_required
+def get_post_login_ptc(request, user=None):
+    return JsonResponse(_get_post_login_ptc_data(request, user))
 
-@login_required    
-def get_post_login_ptc(request):
-    """
-    Returns PTC popup configuration for the authenticated user.
-    """
-    response = {
-        "error": False,
-        "message": "PTC configuration fetched successfully.",
-        "data": {},
-    }
-    user = _get_user(request)
-
-    log.info(
-        "[PTC] Checking post-login PTC. user_id=%s username=%s",
-        user.id,
-        user.username,
-    )
-
-    post_login_features = configuration_helpers.get_value(
-        "POST_LOGIN_FEATURES",
-        {},
-    )
-
-    log.info("[PTC] POST_LOGIN_FEATURES=%s", post_login_features)
-
-    c_ptc = post_login_features.get("c_ptc")
-
-    if not c_ptc:
-        log.info("[PTC] c_ptc configuration not found.")
-        response["error"] = True
-        response["message"] = "c_ptc configuration not found."
-        return JsonResponse(response)
-
-    log.info("[PTC] c_ptc configuration=%s", c_ptc)
-
-    types = c_ptc.get("type", [])
-    enabled = c_ptc.get("enabled", True)
-    
-    if not enabled:
-        log.info("[PTC] c_ptc is disabled.")
-        response["error"] = True
-        response["message"] = "c_ptc is disabled."
-        return JsonResponse(response)
-
-    if not types:
-        log.warning("[PTC] No PTC types configured.")
-        response["error"] = True
-        response["message"] = "No PTC types configured."
-        return JsonResponse(response)
-
-    log.info("[PTC] Configured PTC types=%s", types)
-    
-    user_ptc_info = None
-    
-    for ptc_type in types:
-        user_ptc_info = UserPtcInfo.objects.filter(
-            userid=user,
-            ptc_type=ptc_type,
-            submitted_at__isnull=True,
-        ).first()
-
-        if user_ptc_info:
-            break
-
-    if not user_ptc_info:
-        log.info(
-            "[PTC] No pending PTC found. user=%s",
-            user.username,
-        )
-
-        response["message"] = "No pending PTC found."
-        return JsonResponse(response)
-
-    log.info(
-        "[PTC] Pending PTC found. id=%s ptc_type=%s",
-        user_ptc_info.id,
-        user_ptc_info.ptc_type,
-    )
-
-    data = {
-        "url": request.build_absolute_uri(
-            f"/ptc/fetch/{user_ptc_info.ptc_type}"
-        ).replace("http://", "https://", 1),
-        "type": user_ptc_info.ptc_type,
-        "mandatory": c_ptc.get("mandatory", True),
-        "container_height": c_ptc.get("CONTAINER_HEIGHT", "80vh"),
-        "container_width": c_ptc.get("CONTAINER_WIDTH", "90%"),
-    }
-
-    log.info("[PTC] Returning response=%s", data)
-    response["data"] = data
-
-    return JsonResponse(response)
 
 @login_required   
 def fetch_ptc(request, ptc_type):

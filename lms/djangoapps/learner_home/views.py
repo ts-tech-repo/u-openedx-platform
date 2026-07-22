@@ -5,6 +5,7 @@ Views for Learner Home
 import logging
 from collections import OrderedDict
 
+from c_ptc.helpers import _get_post_login_ptc_data
 from completion.exceptions import UnavailableCompletionData
 from completion.utilities import get_key_to_last_completed_block
 from django.conf import settings
@@ -573,6 +574,7 @@ class InitializeView(APIView):  # pylint: disable=unused-argument
             "unfulfilled_entitlement_pseudo_sessions": unfulfilled_entitlement_pseudo_sessions,
             "pseudo_session_course_overviews": pseudo_session_course_overviews,
             "programs": programs,
+            "ptc_config": _get_post_login_ptc_data(self.request, user).get("data", {}),
         }
 
         response_data = serialize_learner_home_data(learner_dash_data, context)
