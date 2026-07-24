@@ -7,3 +7,4 @@ class CustomPTCConfig(AppConfig):
     
     def ready(self):
         import c_ptc.signals
+        import c_ptc.tasks
