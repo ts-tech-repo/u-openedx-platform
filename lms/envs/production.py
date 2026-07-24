@@ -443,7 +443,7 @@ add_plugins(__name__, ProjectType.LMS, SettingsType.PRODUCTION)
 ALTERNATE_ENV_TASKS = {}
 
 # Custom queue for PTC tasks
-PTC_TASKS_ROUTING_KEY = "ptc_tasks"
+PTC_TASKS_ROUTING_KEY = PTC_QUEUE
 
 # Defines the task -> alternate worker queue to be used when routing.
 EXPLICIT_QUEUES = {

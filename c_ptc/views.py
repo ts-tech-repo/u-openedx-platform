@@ -250,7 +250,6 @@ def submit_ptc(request, ptc_type):
         process_ptc_task.apply_async(
             args=[user_ptc_info.ptc_type, request.user.id],
             kwargs={"custom_message": f"PTC processed successfully for type {ptc_type}"},
-            queue="ptc_tasks",
         )
         log.info("[PTC] celery task queued successfully")
 
