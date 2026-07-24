@@ -246,11 +246,13 @@ def submit_ptc(request, ptc_type):
             )
 
         log.info("[PTC] Final response=%s", response)
-        custom_message = "PTC processed successfully for type {ptc_type}".format(ptc_type=ptc_type)
+        log.info("[PTC] about to queue celery task")
         process_ptc_task.apply_async(
-            args=[user_ptc_info.ptc_type, user.id],
-            kwargs={"custom_message": custom_message},
+            args=[user_ptc_info.ptc_type, request.user.id],
+            kwargs={"custom_message": f"PTC processed successfully for type {ptc_type}"},
+            queue="ptc_tasks",
         )
+        log.info("[PTC] celery task queued successfully")
 
     except Exception:
         log.exception(
