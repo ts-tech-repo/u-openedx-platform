@@ -28,7 +28,6 @@ class UserPtcInfoInline(admin.StackedInline):
     readonly_fields = (
         "created_at",
         "modified_at",
-        "submitted_at",
     )
 
     verbose_name = "User PTC Info"

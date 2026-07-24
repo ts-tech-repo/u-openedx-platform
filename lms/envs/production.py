@@ -442,6 +442,9 @@ add_plugins(__name__, ProjectType.LMS, SettingsType.PRODUCTION)
 # Defines alternate environment tasks, as a dict of form { task_name: alternate_queue }
 ALTERNATE_ENV_TASKS = {}
 
+# Custom queue for PTC tasks
+PTC_TASKS_ROUTING_KEY = "ptc_tasks"
+
 # Defines the task -> alternate worker queue to be used when routing.
 EXPLICIT_QUEUES = {
     'openedx.core.djangoapps.content.course_overviews.tasks.async_course_overview_update': {
@@ -492,6 +495,8 @@ EXPLICIT_QUEUES = {
         'queue': ORA_WORKFLOW_UPDATE_ROUTING_KEY},
     'openassessment.workflow.tasks.update_workflow_for_submission_task': {
         'queue': ORA_WORKFLOW_UPDATE_ROUTING_KEY},
+    'c_ptc.tasks.process_ptc_task': {
+        'queue': PTC_TASKS_ROUTING_KEY},
 
 }
 
