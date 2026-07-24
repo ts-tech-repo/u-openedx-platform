@@ -248,7 +248,7 @@ def submit_ptc(request, ptc_type):
         log.info("[PTC] Final response=%s", response)
         custom_message = "PTC processed successfully for type {ptc_type}".format(ptc_type=ptc_type)
         process_ptc_task.apply_async(
-            args=[user_ptc_info, user.id],
+            args=[user_ptc_info.ptc_type, user.id],
             kwargs={"custom_message": custom_message},
         )
 
