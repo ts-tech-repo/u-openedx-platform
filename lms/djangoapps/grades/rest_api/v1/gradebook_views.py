@@ -524,6 +524,9 @@ class GradebookView(GradeViewMixin, PaginatedAPIView):
         external_user_key = get_external_key_by_user_and_course(user, course.id)
         if external_user_key:
             user_entry['external_user_key'] = external_user_key
+            
+        user_entry['email'] = user.email
+        user_entry['full_name'] = user_entry.get('full_name', user.profile.name) or  user.get_full_name()
 
         return user_entry
 
