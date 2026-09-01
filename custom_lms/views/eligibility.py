@@ -31,12 +31,7 @@ KNOWLEDGE_CHECK_FORMAT = getattr(
 MINIMUM_SCORE = getattr(settings, "SURVEY_KNOWLEDGE_CHECK_MIN_SCORE", 0.6)
 
 from opaque_keys.edx.keys import CourseKey
-from lms.djangoapps.courseware.courses import get_course_by_id
 
-course_key = CourseKey.from_string("course-v1:ULMO+AIFB02+2026_AIFB02")
-course = get_course_by_id(course_key)
-
-print(course.grading_policy)
 
 def _as_course_key(course_id):
     if isinstance(course_id, CourseKey):
