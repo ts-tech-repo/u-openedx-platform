@@ -5,10 +5,6 @@ Models for the custom_lms survey / certificate-eligibility app.
 from django.conf import settings
 from django.db import models
 
-from django.contrib import admin
-
-
-
 try:
     # Standard Open edX way of storing a CourseKey as a model field.
     # Falls back to a plain CharField if opaque_keys isn't importable
@@ -81,47 +77,3 @@ class SurveyResponse(models.Model):
             f"SurveyResponse(user_id={self.user_id}, course_id={self.course_id}, "
             f"survey_id={self.survey_id}, action={self.action})"
         )
-
-
-@admin.register(SurveyResponse)
-class SurveyResponseAdmin(admin.ModelAdmin):
-
-    list_display = (
-        "id",
-        "learner",
-        "course_id",
-        "survey_id",
-        "action",
-        "created_at",
-    )
-    list_filter = ("action", "survey_id", "created_at")
-    search_fields = (
-        "user__username",
-        "user__email",
-        "course_id",
-        "survey_id",
-    )
-    readonly_fields = (
-        "user",
-        "course_id",
-        "survey_id",
-        "action",
-        "metadata",
-        "created_at",
-        "updated_at",
-    )
-    date_hierarchy = "created_at"
-    ordering = ("-created_at",)
-
-    def learner(self, obj):
-        return f"{obj.user.username} ({obj.user.email})"
-    learner.short_description = "Learner"
-    learner.admin_order_field = "user__username"
-
-    def has_add_permission(self, request):
-        # Responses are only ever created via the API, never by hand.
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        # Read-only in the admin — this is a reporting view.
-        return False

@@ -1,0 +1,147 @@
+<%!
+    # Carnegie Mellon University Certificate Template
+%>
+<%page args="
+    learner_name='',
+    program_name='Agentic AI Program: Building Autonomous Systems for Real-World Applications',
+    certificate_date='',
+" />
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate</title>
+
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 24px;
+            background: #f5f5f5;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #333;
+        }
+        .certificate-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 16px;
+            border-radius: 12px;
+            background: hsl(35, 20%, 88%);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+        .certificate {
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+            padding: 48px 40px;
+            text-align: center;
+        }
+        .university { position: relative; text-align: left; font-size: 2rem; font-weight: 700; color: hsl(345, 75%, 38%); }
+        .school { position: relative; text-align: left; font-size: 2rem; color: #333; }
+        .education { position: relative; text-align: left; font-size: 1.125rem; color: #777; }
+        .program-section { position: relative; margin-top: 40px; }
+        .muted { color: #777; }
+        .recipient { margin: 16px 0; font-size: 1.875rem; color: hsl(345, 75%, 45%); font-weight: bold; }
+        .program-name { max-width: 720px; margin: 16px auto; font-size: 1.5rem; line-height: 1.4; color: hsl(0, 60%, 45%); font-weight: bold; }
+        
+        /* Signatures Layout */
+        .signatures { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
+        .signature { text-align: center; }
+        
+        /* Image Container - Forces image to sit right above the line */
+        .signature-name {
+            height: 80px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        
+        /* Image Styling - Prevents images from blowing up the layout */
+        .signature-name img {
+            max-height: 70px;
+            width: auto;
+            max-width: 200px;
+            object-fit: contain;
+        }
+
+        .signature-line { 
+            border-top: 1px solid rgba(0, 0, 0, 0.6); 
+            width: 80%; 
+            margin: 0 auto; 
+        }
+        .signature-title { 
+            margin-top: 8px; 
+            font-size: 0.75rem; 
+            line-height: 1.5; 
+            color: hsl(0, 50%, 45%); 
+        }
+
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .certificate { padding: 32px 20px; }
+            .university, .school { font-size: 1.5rem; }
+            .education { font-size: 1rem; }
+            .recipient { font-size: 1.5rem; }
+            .program-name { font-size: 1.25rem; }
+            .signatures { grid-template-columns: 1fr; gap: 32px; }
+        }
+
+        @media print {
+            body { padding: 0; background: #fff; }
+            .certificate-wrapper { max-width: none; padding: 0; box-shadow: none; }
+            .certificate { box-shadow: none; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="certificate-wrapper">
+    <div class="certificate">
+        <div class="university">Carnegie Mellon University</div>
+        <div class="school">School of Computer Science</div>
+        <div class="education">Executive &amp; Professional Education</div>
+
+        <div class="program-section">
+            <p class="muted">This document confirms that</p>
+            
+            <p class="recipient">${learner_name}</p>
+            
+            <p class="muted">has successfully completed the program</p>
+            
+            <p class="program-name">${program_name}</p>
+            
+            <p class="muted">${certificate_date}</p>
+        </div>
+
+        <div class="signatures">
+            <div class="signature">
+                <div class="signature-name">
+                    <!-- TODO: Replace with actual Ram Konduru signature image URL -->
+                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Ram C. Konduru">
+                </div>
+                <div class="signature-line"></div>
+                <p class="signature-title">
+                    Ram Konduru<br>
+                    Director of Executive Education
+                </p>
+            </div>
+            <div class="signature">
+                <div class="signature-name">
+                    <!-- TODO: Replace with actual Amir Barati signature image URL -->
+                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Amir Barati Farimani">
+                </div>
+                <div class="signature-line"></div>
+                <p class="signature-title">
+                    Amir Barati Farimani<br>
+                    Russell V. Trader Associate Professor, Mechanical Engineering<br>
+                    Courtesy Appointments: Biomedical Engineering, Chemical Engineering, Machine Learning
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
