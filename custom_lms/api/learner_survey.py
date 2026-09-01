@@ -24,10 +24,11 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from custom_lms.certificate import generate_certificate, get_certificate_view_url
-from custom_lms.eligibility import is_eligible_for_certificate
+
 from custom_lms.models.survey import SurveyResponse
 
+from custom_lms.views.certificate import generate_certificate, get_certificate_view_url
+from custom_lms.views.eligibility import is_eligible_for_certificate
 from openedx.core.djangoapps.site_configuration import (
     helpers as configuration_helpers,
 )
