@@ -1058,7 +1058,7 @@ urlpatterns += [
 # Custom LMS
 urlpatterns += [
     path(
-        "custom/lms/",
+        "",
         include("custom_lms.urls")
     ),
     path(
