@@ -15,7 +15,7 @@ except ImportError:  # pragma: no cover
     COURSE_ID_FIELD = models.CharField(max_length=255, db_index=True)
 
 
-class SurveyResponse(models.Model):
+class LearnerSurvey(models.Model):
     """
     One row per (user, course, survey). `action` records whether the
     learner submitted answers or explicitly skipped; `metadata` holds
@@ -34,11 +34,16 @@ class SurveyResponse(models.Model):
     metadata is `{}` when action == "skip".
     """
 
-    ACTION_SUBMIT = "submit"
-    ACTION_SKIP = "skip"
+    # Constants
+    ACTION_NAME_VALIDATE = "name-validate"
+    ACTION_SURVEY_SUBMIT = "survey-submit"
+    ACTION_SURVEY_SKIP = "survey-skip"
+    ACTION_CERTIFICATE = "certificate"
     ACTION_CHOICES = (
-        (ACTION_SUBMIT, "Submitted"),
-        (ACTION_SKIP, "Skipped"),
+        (ACTION_NAME_VALIDATE, "name-validated"),
+        (ACTION_SURVEY_SUBMIT, "survey-submitted"),
+        (ACTION_SURVEY_SKIP, "survey-skipped"),
+        (ACTION_CERTIFICATE, "certificate"),
     )
 
     user = models.ForeignKey(
@@ -49,7 +54,7 @@ class SurveyResponse(models.Model):
     course_id = COURSE_ID_FIELD
     survey_id = models.CharField(max_length=255, db_index=True)
 
-    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
     metadata = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -66,7 +71,7 @@ class SurveyResponse(models.Model):
 
     @property
     def skipped(self):
-        return self.action == self.ACTION_SKIP
+        return self.action == self.ACTION_SURVEY_SKIP
 
     @property
     def answers(self):

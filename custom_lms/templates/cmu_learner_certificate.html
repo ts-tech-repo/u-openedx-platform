@@ -12,7 +12,6 @@
     status_url='/extras/certificate/status/',
     submit_url='/extras/survey/submit/',
     download_url='/extras/certificate/download/',
-    dashboard_url='/dashboard',
 " />
 
 <!DOCTYPE html>
@@ -780,86 +779,52 @@
 
     confirmCheckbox.addEventListener("click", function () {
         const checked = confirmCheckbox.dataset.state === "checked";
-        confirmCheckbox.dataset.state = checked ? "unchecked" : "checked";
-        confirmCheckbox.setAttribute("aria-checked", String(!checked));
-        step1Next.disabled = confirmCheckbox.dataset.state !== "checked";
+
+        confirmCheckbox.dataset.state = checked
+            ? "unchecked"
+            : "checked";
+
+        confirmCheckbox.setAttribute(
+            "aria-checked",
+            String(!checked)
+        );
+
+        step1Next.disabled =
+            confirmCheckbox.dataset.state !== "checked";
     });
 
-    document.getElementById("step1-back").addEventListener("click", exitFlow);
-    step1Next.addEventListener("click", goToStep2);
+    document
+        .getElementById("step1-back")
+        .addEventListener("click", exitFlow);
 
-    /* ---------- Step 2: Survey ---------- */
 
-    document.querySelectorAll(".pill-group").forEach((group) => {
-        group.querySelectorAll(".pill-option").forEach((btn) => {
-            btn.addEventListener("click", function () {
-                group.querySelectorAll(".pill-option").forEach((b) => {
-                    b.dataset.selected = "false";
-                });
-                btn.dataset.selected = "true";
-            });
-        });
-    });
-
-    function collectAnswers() {
-        const answers = [];
-        let complete = true;
-
-        for (let i = 0; i < RATING_QUESTION_COUNT; i++) {
-            const questionBlock = document.querySelector('[data-question-index="' + i + '"]');
-            const questionText = questionBlock.querySelector("label").textContent.trim().replace(/\s+/g, " ").replace(" *", "");
-            const selectedBtn = questionBlock.querySelector('.pill-option[data-selected="true"]');
-            const comment = questionBlock.querySelector(".question-comment").value.trim();
-
-            if (!selectedBtn) {
-                complete = false;
-            }
-
-            answers.push({
-                question: questionText,
-                answer: selectedBtn ? selectedBtn.dataset.value : null,
-                comment: comment
-            });
+    /*
+    * Persist name validation before moving to Step 2.
+    */
+    async function validateName() {
+        if (confirmCheckbox.dataset.state !== "checked") {
+            showToast(
+                "error",
+                "Please confirm that your name is correct."
+            );
+            return;
         }
 
-        answers.push({
-            question: document.querySelector('label[for="enhance"]').textContent.trim(),
-            answer: document.getElementById("enhance").value,
-            comment: ""
-        });
+        const button = step1Next;
 
-        return { complete, answers };
-    }
+        button.disabled = true;
 
-    async function submitSurvey(skipped) {
-        let payload;
-
-        if (skipped) {
-            payload = {
-                course_id: COURSE_ID,
-                survey_id: SURVEY_ID,
-                action: "skip",
-                metadata: {}
-            };
-        } else {
-            const collected = collectAnswers();
-            if (!collected.complete) {
-                showToast("error", "Please answer all required questions before submitting.");
-                return;
+        const payload = {
+            course_id: COURSE_ID,
+            survey_id: SURVEY_ID,
+            action: "name-validate",
+            metadata: {
+                name: document
+                    .getElementById("fullName")
+                    .value
+                    .trim()
             }
-            payload = {
-                course_id: COURSE_ID,
-                survey_id: SURVEY_ID,
-                action: "submit",
-                metadata: { answers: collected.answers }
-            };
-        }
-
-        const activeButton = skipped
-            ? document.getElementById("survey-skip")
-            : document.getElementById("survey-submit");
-
-        activeButton.disabled = true;
+        };
 
         try {
             const response = await fetch(SUBMIT_URL, {
@@ -872,98 +837,443 @@
             const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                showToast("error", (data && data.error) || "Unable to submit. Please try again.");
+                showToast(
+                    "error",
+                    (data && data.error) ||
+                    "Unable to validate your name. Please try again."
+                );
                 return;
             }
 
-            goToStep3();
+            goToStep2();
 
         } catch (error) {
-            showToast("error", "Network error. Please try again.");
+            showToast(
+                "error",
+                "Network error. Please try again."
+            );
         } finally {
+            button.disabled =
+                confirmCheckbox.dataset.state !== "checked";
+        }
+    }
+
+    step1Next.addEventListener(
+        "click",
+        validateName
+    );
+
+
+    /* ---------- Step 2: Survey ---------- */
+
+    document
+        .querySelectorAll(".pill-group")
+        .forEach((group) => {
+
+            group
+                .querySelectorAll(".pill-option")
+                .forEach((btn) => {
+
+                    btn.addEventListener("click", function () {
+
+                        group
+                            .querySelectorAll(".pill-option")
+                            .forEach((b) => {
+                                b.dataset.selected = "false";
+                            });
+
+                        btn.dataset.selected = "true";
+                    });
+                });
+        });
+
+
+    function collectAnswers() {
+
+        const answers = [];
+        let complete = true;
+
+        for (
+            let i = 0;
+            i < RATING_QUESTION_COUNT;
+            i++
+        ) {
+
+            const questionBlock =
+                document.querySelector(
+                    '[data-question-index="' + i + '"]'
+                );
+
+            const questionText =
+                questionBlock
+                    .querySelector("label")
+                    .textContent
+                    .trim()
+                    .replace(/\s+/g, " ")
+                    .replace(" *", "");
+
+            const selectedBtn =
+                questionBlock.querySelector(
+                    '.pill-option[data-selected="true"]'
+                );
+
+            const comment =
+                questionBlock
+                    .querySelector(".question-comment")
+                    .value
+                    .trim();
+
+            if (!selectedBtn) {
+                complete = false;
+            }
+
+            answers.push({
+                question: questionText,
+                answer: selectedBtn
+                    ? selectedBtn.dataset.value
+                    : null,
+                comment: comment
+            });
+        }
+
+        answers.push({
+            question: document
+                .querySelector('label[for="enhance"]')
+                .textContent
+                .trim(),
+
+            answer: document
+                .getElementById("enhance")
+                .value
+                .trim(),
+
+            comment: ""
+        });
+
+        return {
+            complete,
+            answers
+        };
+    }
+
+
+    /*
+    * Submit survey or skip survey.
+    *
+    * Backend will:
+    *
+    *     survey-submit / survey-skip
+    *              ↓
+    *          certificate
+    */
+    async function submitSurvey(skipped) {
+
+        let payload;
+
+        if (skipped) {
+
+            payload = {
+                course_id: COURSE_ID,
+                survey_id: SURVEY_ID,
+                action: "survey-skip",
+                metadata: {}
+            };
+
+        } else {
+
+            const collected = collectAnswers();
+
+            if (!collected.complete) {
+
+                showToast(
+                    "error",
+                    "Please answer all required questions before submitting."
+                );
+
+                return;
+            }
+
+            payload = {
+                course_id: COURSE_ID,
+                survey_id: SURVEY_ID,
+                action: "survey-submit",
+                metadata: {
+                    answers: collected.answers
+                }
+            };
+        }
+
+        const activeButton = skipped
+            ? document.getElementById("survey-skip")
+            : document.getElementById("survey-submit");
+
+        activeButton.disabled = true;
+
+        try {
+
+            const response = await fetch(
+                SUBMIT_URL,
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: authHeaders(),
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            const data =
+                await response
+                    .json()
+                    .catch(() => null);
+
+            if (!response.ok) {
+
+                showToast(
+                    "error",
+                    (data && data.error) ||
+                    "Unable to submit. Please try again."
+                );
+
+                return;
+            }
+
+            /*
+            * Backend has already:
+            *
+            *     1. saved survey action
+            *     2. generated certificate
+            *     3. changed action to certificate
+            *
+            * Therefore directly move to Step 3.
+            */
+            if (data.completed) {
+                goToStep3();
+                return;
+            }
+
+            showToast(
+                "error",
+                "Certificate generation was not completed."
+            );
+
+        } catch (error) {
+
+            showToast(
+                "error",
+                "Network error. Please try again."
+            );
+
+        } finally {
+
             activeButton.disabled = false;
         }
     }
 
-    document.getElementById("survey-submit").addEventListener("click", () => submitSurvey(false));
-    document.getElementById("survey-skip").addEventListener("click", () => submitSurvey(true));
-    document.getElementById("step2-back").addEventListener("click", goToStep1);
+
+    document
+        .getElementById("survey-submit")
+        .addEventListener(
+            "click",
+            () => submitSurvey(false)
+        );
+
+    document
+        .getElementById("survey-skip")
+        .addEventListener(
+            "click",
+            () => submitSurvey(true)
+        );
+
+
+    /*
+    * Going back from Survey is allowed.
+    *
+    * Important:
+    * This does NOT change the database action.
+    * The learner can go back and then continue.
+    */
+    document
+        .getElementById("step2-back")
+        .addEventListener(
+            "click",
+            goToStep1
+        );
+
 
     /* ---------- Step 3: Certificate ---------- */
 
-    document.getElementById("step3-back").addEventListener("click", exitFlow);
+    document
+        .getElementById("step3-back")
+        .addEventListener(
+            "click",
+            exitFlow
+        );
 
-    document.getElementById("download-certificate").addEventListener("click", async function () {
-        const button = this;
-        try {
-            button.disabled = true;
 
-            const params = new URLSearchParams({ course_id: COURSE_ID });
-            const response = await fetch(DOWNLOAD_URL + "?" + params.toString(), {
-                method: "GET",
-                credentials: "include",
-                headers: { "Accept": "application/pdf" }
-            });
+    document
+        .getElementById("download-certificate")
+        .addEventListener(
+            "click",
+            async function () {
 
-            if (!response.ok) {
-                throw new Error("Certificate download failed: " + response.status);
+                const button = this;
+
+                try {
+
+                    button.disabled = true;
+
+                    const params =
+                        new URLSearchParams({
+                            course_id: COURSE_ID
+                        });
+
+                    const response =
+                        await fetch(
+                            DOWNLOAD_URL +
+                            "?" +
+                            params.toString(),
+                            {
+                                method: "GET",
+                                credentials: "same-origin",
+                                headers: {
+                                    "Accept": "text/html"
+                                }
+                            }
+                        );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Certificate download failed: " +
+                            response.status
+                        );
+                    }
+
+                    const blob =
+                        await response.blob();
+
+                    const url =
+                        window.URL.createObjectURL(blob);
+
+                    const link =
+                        document.createElement("a");
+
+                    link.href = url;
+                    link.download ="CMU_Certificate.html";
+
+                    document.body.appendChild(link);
+
+                    link.click();
+
+                    link.remove();
+
+                    window.URL.revokeObjectURL(url);
+
+                } catch (error) {
+
+                    showToast(
+                        "error",
+                        "Unable to download the certificate. Please try again."
+                    );
+
+                } finally {
+
+                    button.disabled = false;
+                }
             }
+        );
 
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = "certificate.pdf";
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
-
-        } catch (error) {
-            showToast("error", "Unable to download the certificate. Please try again.");
-        } finally {
-            button.disabled = false;
-        }
-    });
 
     /* ---------- Initial status check ---------- */
 
     async function init() {
+
         if (!COURSE_ID) {
             return;
         }
 
         try {
-            const params = new URLSearchParams({ course_id: COURSE_ID });
-            const response = await fetch(STATUS_URL + "?" + params.toString(), {
-                method: "GET",
-                credentials: "same-origin",
-                headers: { "Accept": "application/json" }
-            });
+
+            const params =
+                new URLSearchParams({
+                    course_id: COURSE_ID
+                });
+
+            const response =
+                await fetch(
+                    STATUS_URL +
+                    "?" +
+                    params.toString(),
+                    {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    }
+                );
 
             if (!response.ok) {
                 return;
             }
 
-            const data = await response.json();
+            const data =
+                await response.json();
 
             if (!data.eligible) {
-                showToast("error", "You have not met the eligibility requirements for a certificate yet.");
+
+                showToast(
+                    "error",
+                    "You have not met the eligibility requirements for a certificate yet."
+                );
+
                 return;
             }
 
-            if (!data.survey_required) {
+            /*
+            * The action values are mutually exclusive.
+            *
+            * No record
+            *      -> Step 1
+            *
+            * name-validate
+            *      -> Step 2
+            *
+            * certificate
+            *      -> Step 3
+            */
+
+            if (data.completed) {
+
                 goToStep3();
+
+                return;
             }
 
+            if (data.name_validated) {
+
+                goToStep2();
+
+                return;
+            }
+
+            /*
+            * No action yet.
+            */
+            goToStep1();
+
         } catch (error) {
-            // Fail open
+
+            /*
+            * Fail open.
+            * The wizard remains on Step 1.
+            */
+
+            goToStep1();
         }
     }
 
-    init();
 
-})();
+    init();
 </script>
 
 </body>
