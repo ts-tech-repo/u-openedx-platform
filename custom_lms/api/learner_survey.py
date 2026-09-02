@@ -197,14 +197,6 @@ def _generate_certificate(user, course_id):
 
     return True
 
-
-def _get_certificate_view_url(request, course_id):
-    """
-    Helper to get the URL for viewing the generated certificate.
-    """
-    return f"/extras/certificate/view/?course_id={course_id}"
-
-
 @login_required
 @require_GET
 def certificate_status(request):
@@ -293,7 +285,6 @@ def certificate_status(request):
             "completed": False,
             "current_action": None,
             "survey_required": False,
-            "redirect_url": None,
         })
 
     # ---------------------------------------------------------------
@@ -357,31 +348,16 @@ def certificate_status(request):
         and not completed
     )
 
-    redirect_url = None
-
-    if completed:
-        redirect_url = _get_certificate_view_url(
-            request,
-            course_id,
-        )
-
     response_payload = {
         "eligible": True,
         "eligibility": eligibility_details,
-
         "survey_id": CERTIFICATE_SURVEY_ID,
-
         "current_action": current_action,
-
         "name_validated": name_validated,
         "survey_submitted": survey_submitted,
         "survey_skipped": survey_skipped,
         "completed": completed,
-
         "survey_required": survey_required,
-
-        "redirect_url": redirect_url,
-
         "learner_name": _learner_display_name(user),
         "program_name": SURVEY_PROGRAM_NAME,
         "certificate_date": _certificate_date_display(),
@@ -816,11 +792,6 @@ def submit_survey(request):
         list(response.metadata.keys()),
     )
 
-    redirect_url = _get_certificate_view_url(
-        request,
-        course_id,
-    )
-
     message = (
         "Your survey response was submitted successfully."
         if action == LearnerSurvey.ACTION_SURVEY_SUBMIT
@@ -850,7 +821,6 @@ def submit_survey(request):
         "metadata": response.metadata,
 
         "message": message,
-        "redirect_url": redirect_url,
     })
 
 
