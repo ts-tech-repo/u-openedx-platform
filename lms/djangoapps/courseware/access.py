@@ -811,7 +811,7 @@ def _visible_to_nonstaff_users(block, display_error_to_user=True):
         display_error_to_user: If True, show an error message to the user say the content was hidden. Otherwise,
             hide the content silently.
     """
-    if block.visible_to_staff_only:
+    if "visible_to_staff_only" in block.fields and block.visible_to_staff_only:
         return VisibilityError(display_error_to_user=display_error_to_user)
     else:
         return ACCESS_GRANTED

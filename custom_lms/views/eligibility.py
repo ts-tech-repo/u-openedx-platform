@@ -32,6 +32,7 @@ MINIMUM_SCORE = getattr(settings, "SURVEY_KNOWLEDGE_CHECK_MIN_SCORE", 0.6)
 
 from opaque_keys.edx.keys import CourseKey
 
+from lms.djangoapps.courseware.courses import get_course_by_id
 
 def _as_course_key(course_id):
     if isinstance(course_id, CourseKey):
@@ -48,11 +49,21 @@ def is_eligible_for_certificate(user, course_id):
     can explain *why* the button is disabled if it wants to.
     """
     from lms.djangoapps.grades.api import CourseGradeFactory  # edx-platform import
+    from lms.djangoapps.courseware.courses import get_course_by_id
 
     course_key = _as_course_key(course_id)
+    course = get_course_by_id(course_key)
+    
+    log.info(
+        "Course Structure: %s", course.__dict__)
+    
 
     try:
         course_grade = CourseGradeFactory().read(user, course_key=course_key)
+        log.info(
+            "Loaded course grade for user_id=%s course_id=%s" " course_grade=%s",
+            user.id, course_key, course_grade.__dict__,
+        )
     except Exception:  # noqa: BLE001
         log.exception(
             "Unable to load course grade for user_id=%s course_id=%s",

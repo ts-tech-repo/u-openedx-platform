@@ -1055,7 +1055,7 @@
             *
             * Therefore directly move to Step 3.
             */
-            if (data.completed) {
+            if (data.completed || data.survey_skipped || data.survey_submitted) {
                 goToStep3();
                 return;
             }
@@ -1228,7 +1228,7 @@
             const data =
                 await response.json();
 
-            if (data.completed) {
+            if (data.completed || data.survey_skipped || data.survey_submitted) {
 
                 goToStep3();
 
