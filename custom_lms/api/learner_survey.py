@@ -70,8 +70,8 @@ log = logging.getLogger(__name__)
 
 CERTIFICTAE_CONFIG = configuration_helpers.get_value(
     "CERTIFICATE_CONFIG",
-    settings.CERTIFICATE_CONFIG,
-) or {}
+    getattr(settings, "CERTIFICATE_CONFIG", {}),
+)
 
 CERTIFICATE_SURVEY_ID = CERTIFICTAE_CONFIG.get("survey_id", "course-completion-survey")
 
@@ -86,7 +86,7 @@ SURVEY_PROGRAM_NAME = CERTIFICTAE_CONFIG.get("survey_program_name", "Agentic AI 
 
 SUPPORT_EMAIL = configuration_helpers.get_value(
     "contact_mailing_address",
-    settings.CONTACT_EMAIL,
+    getattr(settings, "CONTACT_EMAIL", {}),
 )
 
 
