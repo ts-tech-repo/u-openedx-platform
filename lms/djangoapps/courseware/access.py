@@ -811,8 +811,13 @@ def _visible_to_nonstaff_users(block, display_error_to_user=True):
         display_error_to_user: If True, show an error message to the user say the content was hidden. Otherwise,
             hide the content silently.
     """
-    log.info("block.visible_to_staff_only=%s", block)
-    if "visible_to_staff_only" in block.fields and block.visible_to_staff_only:
+    # block may be an xblock (has .fields dict) or a CourseOverview (plain Django model attribute).
+    # Some custom xblocks may not declare visible_to_staff_only at all, so guard both cases.
+    if hasattr(block, 'fields'):
+        is_staff_only = "visible_to_staff_only" in block.fields and block.visible_to_staff_only
+    else:
+        is_staff_only = getattr(block, 'visible_to_staff_only', False)
+    if is_staff_only:
         return VisibilityError(display_error_to_user=display_error_to_user)
     else:
         return ACCESS_GRANTED
