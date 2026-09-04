@@ -333,8 +333,22 @@
             margin-top: 0.25rem;
             width: 100%;
         }
-        .sig-name { font-style: italic; font-size: 1.125rem; }
-        .sig-title { font-size: 0.75rem; color: hsl(0, 50%, 45%); margin-top: 0.5rem; }
+        .sig-name {
+            height: 80px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        
+        /* Image Styling - Prevents images from blowing up the layout */
+        .sig-name img {
+            max-height: 70px;
+            width: auto;
+            max-width: 200px;
+            object-fit: contain;
+        }
+        .sig-title { font-size: 0.75rem; color: hsl(0, 50%, 45%); margin-top: 0.5rem; text-align: center; }
 
         /* Steps visibility */
         .step-panel { display: none; }
@@ -367,11 +381,6 @@
             pointer-events: auto;
             animation: certToastIn 0.25s ease forwards;
         }
-        .cert-toast.error {
-            border-color: #fecaca;
-            background: #fef2f2;
-            color: #b91c1c;
-        }
         .cert-toast-title { font-size: 14px; font-weight: 600; flex: 1; }
         .cert-toast-close {
             width: 24px; height: 24px; padding: 0; border: 0;
@@ -401,49 +410,44 @@
         <div class="stepper">
             <div class="step-wrapper">
                 <div class="step-content">
-                    <div id="step-circle-1" class="step-circle" data-status="current">
-                        <svg id="step-icon-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
+                    <div id="step-circle-1" class="step-circle" data-status="${ 'complete' if initial_step > 1 else 'current' }">
+                        % if initial_step > 1:
+                        <svg id="step-icon-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                        % else:
+                        <svg id="step-icon-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        % endif
                     </div>
-                    <span id="step-label-1" class="step-label" data-status="current">Verify Details</span>
+                    <span id="step-label-1" class="step-label" data-status="${ 'complete' if initial_step > 1 else 'current' }">Verify Details</span>
                 </div>
                 <div class="step-line"></div>
             </div>
 
             <div class="step-wrapper">
                 <div class="step-content">
-                    <div id="step-circle-2" class="step-circle" data-status="upcoming">
-                        <svg id="step-icon-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
-                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                            <path d="M12 11h4"></path>
-                            <path d="M12 16h4"></path>
-                            <path d="M8 11h.01"></path>
-                            <path d="M8 16h.01"></path>
-                        </svg>
+                    <div id="step-circle-2" class="step-circle" data-status="${ 'complete' if initial_step > 2 else ('current' if initial_step == 2 else 'upcoming') }">
+                        % if initial_step > 2:
+                        <svg id="step-icon-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                        % else:
+                        <svg id="step-icon-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>
+                        % endif
                     </div>
-                    <span id="step-label-2" class="step-label" data-status="upcoming">Survey</span>
+                    <span id="step-label-2" class="step-label" data-status="${ 'complete' if initial_step > 2 else ('current' if initial_step == 2 else 'upcoming') }">Survey</span>
                 </div>
                 <div class="step-line"></div>
             </div>
 
             <div class="step-wrapper">
                 <div class="step-content">
-                    <div id="step-circle-3" class="step-circle" data-status="upcoming">
-                        <svg id="step-icon-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
-                            <circle cx="12" cy="8" r="6"></circle>
-                        </svg>
+                    <div id="step-circle-3" class="step-circle" data-status="${ 'current' if initial_step == 3 else 'upcoming' }">
+                        <svg id="step-icon-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle></svg>
                     </div>
-                    <span id="step-label-3" class="step-label" data-status="upcoming">Certificate</span>
+                    <span id="step-label-3" class="step-label" data-status="${ 'current' if initial_step == 3 else 'upcoming' }">Certificate</span>
                 </div>
             </div>
         </div>
 
         <!-- STEP 1: Verify Details -->
-        <div class="step-panel active" id="panel-1">
+        <div class="step-panel ${ 'active' if initial_step == 1 else '' }" id="panel-1">
             <div class="card">
                 <div class="card-header">
                     <div class="flex items-center gap-2">
@@ -496,7 +500,7 @@
         </div>
 
         <!-- STEP 2: Survey -->
-        <div class="step-panel" id="panel-2">
+        <div class="step-panel ${ 'active' if initial_step == 2 else '' }" id="panel-2">
             <div class="card">
                 <div class="card-header">
                     <div class="flex items-center gap-2">
@@ -608,9 +612,9 @@
         </div>
 
         <!-- STEP 3: Certificate -->
-        <div class="step-panel aman-debug" id="panel-3">
+        <div class="step-panel ${ 'active' if initial_step == 3 else '' } aman-debug" id="panel-3">
             <div class="mt-8">
-                <div class="card" style="margin-top: 0;">
+                <div class="card" style="margin-top: 0; padding: 1rem;">
                     <div class="flex items-center gap-3 p-5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(var(--primary)); width: 1.5rem; height: 1.5rem;">
                             <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
@@ -639,12 +643,17 @@
                         </div>
                         <div class="cert-signatures">
                             <div>
-                                <p class="sig-name">Ram C. Konduru</p>
+                                <p class="sig-name">
+                                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Ram C. Konduru">
+                                </p>
                                 <div class="sig-line"></div>
                                 <p class="sig-title">Ram Konduru Director of Executive Education</p>
                             </div>
                             <div>
-                                <p class="sig-name">A. Barati</p>
+                                <p class="sig-name">
+                                    <!-- TODO: Replace with actual Amir Barati signature image URL -->
+                                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Amir Barati Farimani">
+                                </p>
                                 <div class="sig-line"></div>
                                 <p class="sig-title">
                                     Amir Barati Farimani<br>
@@ -1158,7 +1167,7 @@
                         document.createElement("a");
 
                     link.href = url;
-                    link.download ="CMU_Certificate.html";
+                    link.download ="CMU_Certificate.pdf";
 
                     document.body.appendChild(link);
 
@@ -1219,29 +1228,6 @@
             const data =
                 await response.json();
 
-            if (!data.eligible) {
-
-                showToast(
-                    "error",
-                    "You have not met the eligibility requirements for a certificate yet."
-                );
-
-                return;
-            }
-
-            /*
-            * The action values are mutually exclusive.
-            *
-            * No record
-            *      -> Step 1
-            *
-            * name-validate
-            *      -> Step 2
-            *
-            * certificate
-            *      -> Step 3
-            */
-
             if (data.completed) {
 
                 goToStep3();
@@ -1256,24 +1242,15 @@
                 return;
             }
 
-            /*
-            * No action yet.
-            */
             goToStep1();
 
         } catch (error) {
-
-            /*
-            * Fail open.
-            * The wizard remains on Step 1.
-            */
 
             goToStep1();
         }
     }
 
-
-    init();
+})();
 </script>
 
 </body>

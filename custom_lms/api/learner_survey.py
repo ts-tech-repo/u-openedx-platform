@@ -38,63 +38,173 @@ The row's `metadata` field preserves details for every action:
 
 import json
 import logging
+import weasyprint
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
-from common.djangoapps.edxmako.shortcuts import render_to_response
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
+from common.djangoapps.edxmako.shortcuts import (
+    render_to_response,
+    render_to_string,
+)
+
 from custom_lms.models.learner_survey import LearnerSurvey
 from custom_lms.views.eligibility import is_eligible_for_certificate
+
 from openedx.core.djangoapps.site_configuration import (
     helpers as configuration_helpers,
 )
 
-
+User = get_user_model()
 log = logging.getLogger(__name__)
 
 
-CERTIFICATE_SURVEY_ID = "course-completion-survey"
+# ----------------------------------------------------------------------
+# Constants
+# ----------------------------------------------------------------------
 
-SURVEY_PROGRAM_NAME = configuration_helpers.get_value(
-    "SURVEY_PROGRAM_NAME",
-    "Agentic AI Program: Building Autonomous Systems for Real-World Applications",
-)
+CERTIFICTAE_CONFIG = configuration_helpers.get_value(
+    "CERTIFICATE_CONFIG",
+    settings.CERTIFICATE_CONFIG,
+) or {}
+
+CERTIFICATE_SURVEY_ID = CERTIFICTAE_CONFIG.get("survey_id", "course-completion-survey")
+
+CERTIFICATE_WIZARD_TEMPLATE = CERTIFICTAE_CONFIG.get("certificate_wizard_template", "cmu_certificate_wizard.html")
+DOWNLOAD_CERTIFICATE_TEMPLATE = CERTIFICTAE_CONFIG.get("download_certificate_template", "cmu_certificate.html")
+
+# Eligibility can be expensive because it may involve course/progress
+# queries. Cache it for 5 minutes.
+ELIGIBILITY_CACHE_TIMEOUT = CERTIFICTAE_CONFIG.get("eligibility_cache_timeout", 300)
+
+SURVEY_PROGRAM_NAME = CERTIFICTAE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
 
 SUPPORT_EMAIL = configuration_helpers.get_value(
     "contact_mailing_address",
     settings.CONTACT_EMAIL,
 )
 
-CERTIFICATE_WIZARD_TEMPLATE = "cmu_learner_certificate.html"
-CERTIFICATE_FINAL_TEMPLATE = "cmu_certificate.html"
 
+# ----------------------------------------------------------------------
+# Basic helpers
+# ----------------------------------------------------------------------
 
 def _learner_display_name(user):
-    full_name = (
-        user.get_full_name()
-        if hasattr(user, "get_full_name")
-        else f"{user.first_name} {user.last_name}"
-    )
+    """
+    Return the learner's display name.
+    """
+    if hasattr(user, "get_full_name"):
+        full_name = user.get_full_name()
+    else:
+        full_name = f"{user.first_name} {user.last_name}"
 
-    return (full_name or "").strip()
+    return full_name .strip()
 
 
 def _certificate_date_display():
+    """
+    Return certificate date in display format.
+    """
     return timezone.now().strftime("%B %-d, %Y")
 
 
+# ----------------------------------------------------------------------
+# Eligibility
+# ----------------------------------------------------------------------
+
+def _eligibility_cache_key(user, course_id):
+    """
+    Build a unique cache key for learner/course eligibility.
+    """
+    return f"certificate-eligibility:{user.id}:{course_id}"
+
+
+def _get_certificate_eligibility(user, course_id):
+    """
+    Return certificate eligibility.
+
+    The actual eligibility calculation is cached because it can be
+    expensive and is called by multiple endpoints in the workflow.
+    """
+
+    cache_key = _eligibility_cache_key(user, course_id)
+
+    cached_result = cache.get(cache_key)
+
+    if cached_result is not None:
+        return cached_result
+
+    start_time = timezone.now()
+
+    result = is_eligible_for_certificate(
+        user,
+        course_id,
+    )
+
+    elapsed = (
+        timezone.now() - start_time
+    ).total_seconds()
+
+    log.info(
+        "certificate eligibility calculated | "
+        "user_id=%s | course_id=%s | eligible=%s | elapsed=%.3fs",
+        getattr(user, "id", None),
+        course_id,
+        result[0],
+        elapsed,
+    )
+
+    cache.set(
+        cache_key,
+        result,
+        ELIGIBILITY_CACHE_TIMEOUT,
+    )
+
+    return result
+
+
+def _clear_certificate_eligibility_cache(user, course_id):
+    """
+    Clear cached eligibility.
+
+    Call this if course progress/grades are changed and eligibility
+    needs to be recalculated immediately.
+    """
+    cache.delete(
+        _eligibility_cache_key(user, course_id)
+    )
+
+
+# ----------------------------------------------------------------------
+# LearnerSurvey helpers
+# ----------------------------------------------------------------------
+
 def _get_current_action(user, course_id):
     """
-    Returns the single LearnerSurvey row for the learner/course/survey.
+    Return the single LearnerSurvey row for the learner/course/survey.
+
+    `.only()` avoids loading unnecessary database fields.
     """
-    return LearnerSurvey.objects.filter(
-        user=user,
-        course_id=course_id,
-        survey_id=CERTIFICATE_SURVEY_ID,
-    ).first()
+
+    return (
+        LearnerSurvey.objects
+        .only(
+            "id",
+            "action",
+            "metadata",
+        )
+        .filter(
+            user=user,
+            course_id=course_id,
+            survey_id=CERTIFICATE_SURVEY_ID,
+        )
+        .first()
+    )
 
 
 def _merge_action_metadata(
@@ -105,21 +215,6 @@ def _merge_action_metadata(
     """
     Preserve existing metadata and add/update metadata for the
     specified action.
-
-    Existing action metadata is NOT removed.
-
-    Example:
-
-        existing:
-        {
-            "name-validate": {...}
-        }
-
-        after survey-submit:
-        {
-            "name-validate": {...},
-            "survey-submit": {...}
-        }
     """
 
     if not isinstance(existing_metadata, dict):
@@ -146,12 +241,13 @@ def _merge_action_metadata(
     return merged_metadata
 
 
+# ----------------------------------------------------------------------
+# Certificate helpers
+# ----------------------------------------------------------------------
+
 def _get_certificate_context(request, course_id):
     """
-    Build the certificate context.
-
-    This context is also safe to store in JSON metadata because it
-    contains only JSON-serializable values.
+    Build JSON-serializable certificate context.
     """
 
     return {
@@ -166,20 +262,15 @@ def _get_certificate_context(request, course_id):
 
 def _get_certificate_metadata(request, course_id):
     """
-    Return the certificate creation metadata.
-
-    This is intentionally separate from the Django template context
-    because request/user objects must not be stored in JSONField.
+    Build certificate metadata for LearnerSurvey.metadata.
     """
-
-    certificate_context = _get_certificate_context(
-        request,
-        course_id,
-    )
 
     return {
         "created_at": timezone.now().isoformat(),
-        "certificate_context": certificate_context,
+        "certificate_context": _get_certificate_context(
+            request,
+            course_id,
+        ),
     }
 
 
@@ -197,70 +288,54 @@ def _generate_certificate(user, course_id):
 
     return True
 
+
+# ----------------------------------------------------------------------
+# Certificate status
+# ----------------------------------------------------------------------
+
 @login_required
 @require_GET
 def certificate_status(request):
     """
     GET /extras/certificate/status/?course_id=...
 
-    Returns the current workflow state.
-
-    DB action:
-
-        None
-            -> Step 1
-
-        name-validate
-            -> Step 2
-
-        survey-submit / survey-skip
-            -> transitional state
-
-        certificate
-            -> Step 3
+    Returns the current certificate workflow state.
     """
 
     course_id = request.GET.get("course_id")
 
-    user = request.user
-    username = getattr(user, "username", None)
-    user_id = getattr(user, "id", None)
-
-    log.info(
-        "certificate_status called | user=%s | user_id=%s | "
-        "is_staff=%s | course_id=%s",
-        username,
-        user_id,
-        getattr(user, "is_staff", False),
-        course_id,
-    )
-
     if not course_id:
-        log.warning(
-            "certificate_status rejected: missing course_id | "
-            "user=%s | user_id=%s",
-            username,
-            user_id,
-        )
-
         return JsonResponse(
             {"error": "course_id is required"},
             status=400,
         )
 
+    user_email = request.GET.get("email") or request.user.email
+    
+    try:
+        user = User.objects.get(email=user_email)
+    except User.DoesNotExist:
+        return JsonResponse(
+            {"error": "user not found"},
+            status=400,
+        )
+
+    log.info(
+        "certificate_status called | "
+        "user_id=%s | course_id=%s",
+        getattr(user, "id", None),
+        course_id,
+    )
+
     # ---------------------------------------------------------------
     # Eligibility
     # ---------------------------------------------------------------
 
-    eligible, eligibility_details = is_eligible_for_certificate(
-        user,
-        course_id,
-    )
-
+    eligible, eligibility_details = _get_certificate_eligibility (user, course_id)
     log.info(
         "certificate_status eligibility | user=%s | course_id=%s | "
         "eligible=%s | details=%s",
-        username,
+        user.username,
         course_id,
         eligible,
         eligibility_details,
@@ -270,7 +345,7 @@ def certificate_status(request):
         log.info(
             "certificate_status: learner not eligible | "
             "user=%s | course_id=%s | is_staff=%s",
-            username,
+            user.username,
             course_id,
             user.is_staff,
         )
@@ -288,7 +363,7 @@ def certificate_status(request):
         })
 
     # ---------------------------------------------------------------
-    # Get the ONE workflow row
+    # Get workflow state
     # ---------------------------------------------------------------
 
     learner_survey = _get_current_action(
@@ -302,24 +377,8 @@ def certificate_status(request):
         else None
     )
 
-    metadata = (
-        learner_survey.metadata
-        if learner_survey and isinstance(learner_survey.metadata, dict)
-        else {}
-    )
-
-    log.info(
-        "certificate_status survey state | user=%s | course_id=%s | "
-        "response_id=%s | action=%s | metadata_keys=%s",
-        username,
-        course_id,
-        getattr(learner_survey, "id", None),
-        current_action,
-        list(metadata.keys()),
-    )
-
     # ---------------------------------------------------------------
-    # Current state
+    # Determine state
     # ---------------------------------------------------------------
 
     name_validated = (
@@ -367,7 +426,7 @@ def certificate_status(request):
         "certificate_status response | user=%s | course_id=%s | "
         "action=%s | name_validated=%s | survey_submitted=%s | "
         "survey_skipped=%s | completed=%s",
-        username,
+        user.username,
         course_id,
         current_action,
         name_validated,
@@ -379,31 +438,25 @@ def certificate_status(request):
     return JsonResponse(response_payload)
 
 
+# ----------------------------------------------------------------------
+# Survey submit
+# ----------------------------------------------------------------------
+
 @login_required
 @require_POST
 def submit_survey(request):
     """
     POST /extras/survey/submit/
 
-    Supported client actions:
+    Supported actions:
 
         name-validate
         survey-submit
         survey-skip
 
-    `certificate` can NEVER be supplied by the client.
-
-    The same DB row is updated throughout the workflow.
+    The final certificate state is stored in the same LearnerSurvey row.
     """
 
-    username = getattr(request.user, "username", None)
-    user_id = getattr(request.user, "id", None)
-
-    log.info(
-        "submit_survey called | user=%s | user_id=%s",
-        username,
-        user_id,
-    )
 
     # ---------------------------------------------------------------
     # Parse JSON
@@ -412,11 +465,6 @@ def submit_survey(request):
     try:
         data = json.loads(request.body)
     except (TypeError, ValueError):
-        log.warning(
-            "submit_survey invalid JSON | user=%s",
-            username,
-        )
-
         return JsonResponse(
             {
                 "success": False,
@@ -424,29 +472,34 @@ def submit_survey(request):
             },
             status=400,
         )
+        
+    log.info(
+            "submit_survey called | Payload: %s",
+            json.dumps(data),
+        )
 
     survey_id = data.get("survey_id")
     course_id = data.get("course_id")
     action = data.get("action")
-    request_metadata = data.get("metadata", {})
-
-    log.info(
-        "submit_survey payload | user=%s | survey_id=%s | "
-        "course_id=%s | action=%s | metadata_keys=%s",
-        username,
-        survey_id,
-        course_id,
-        action,
-        (
-            list(request_metadata.keys())
-            if isinstance(request_metadata, dict)
-            else type(request_metadata).__name__
-        ),
+    request_metadata = data.get(
+        "metadata",
+        {},
     )
+    user_email = data.get("user_email", request.user.email)
+    
+    
 
     # ---------------------------------------------------------------
     # Basic validation
     # ---------------------------------------------------------------
+    
+    try:
+        user = User.objects.get(email=user_email)
+    except User.DoesNotExist:
+        return JsonResponse(
+            {"error": "user not found"},
+            status=400,
+        )
 
     if not survey_id:
         return JsonResponse(
@@ -484,7 +537,7 @@ def submit_survey(request):
     if action not in allowed_actions:
         log.warning(
             "submit_survey invalid action | user=%s | action=%s",
-            username,
+            user.username,
             action,
         )
 
@@ -508,50 +561,8 @@ def submit_survey(request):
             status=400,
         )
 
-    # ---------------------------------------------------------------
-    # Eligibility
-    # ---------------------------------------------------------------
-
-    eligible, eligibility_details = is_eligible_for_certificate(
-        request.user,
-        course_id,
-    )
-
-    log.info(
-        "submit_survey eligibility | user=%s | course_id=%s | "
-        "eligible=%s | details=%s",
-        username,
-        course_id,
-        eligible,
-        eligibility_details,
-    )
-
-    if not request.user.is_staff and not eligible:
-        log.warning(
-            "submit_survey rejected: user not eligible | "
-            "user=%s | course_id=%s",
-            username,
-            course_id,
-        )
-
-        return JsonResponse(
-            {
-                "success": False,
-                "error": (
-                    "You have not met the eligibility requirements "
-                    "for a certificate yet."
-                ),
-                "eligibility": eligibility_details,
-            },
-            status=403,
-        )
-
-    # ---------------------------------------------------------------
-    # Get existing SINGLE workflow row
-    # ---------------------------------------------------------------
-
     learner_survey = _get_current_action(
-        request.user,
+        user,
         course_id,
     )
 
@@ -571,7 +582,7 @@ def submit_survey(request):
         "submit_survey previous state | user=%s | course_id=%s | "
         "response_id=%s | previous_action=%s | requested_action=%s | "
         "existing_metadata_keys=%s",
-        username,
+        user.username,
         course_id,
         getattr(learner_survey, "id", None),
         previous_action,
@@ -595,9 +606,8 @@ def submit_survey(request):
                 status=409,
             )
 
-        # Do not trust client-provided name.
         action_metadata = {
-            "name": _learner_display_name(request.user),
+            "name": _learner_display_name(user),
         }
 
         merged_metadata = _merge_action_metadata(
@@ -607,7 +617,7 @@ def submit_survey(request):
         )
 
         response, created = LearnerSurvey.objects.update_or_create(
-            user=request.user,
+            user=user,
             course_id=course_id,
             survey_id=CERTIFICATE_SURVEY_ID,
             defaults={
@@ -619,7 +629,7 @@ def submit_survey(request):
         log.info(
             "name validation saved | user=%s | course_id=%s | "
             "response_id=%s | created=%s | action=%s | metadata_keys=%s",
-            username,
+            user.username,
             course_id,
             response.id,
             created,
@@ -632,14 +642,11 @@ def submit_survey(request):
             "id": response.id,
             "action": response.action,
             "current_action": response.action,
-
             "name_validated": True,
             "survey_submitted": False,
             "survey_skipped": False,
             "completed": False,
-
             "metadata": response.metadata,
-
             "message": "Name validated successfully.",
         })
 
@@ -647,11 +654,11 @@ def submit_survey(request):
     # SURVEY SUBMIT / SKIP
     # ---------------------------------------------------------------
 
-    if previous_action != LearnerSurvey.ACTION_NAME_VALIDATE:
+    if previous_action != LearnerSurvey.ACTION_NAME_VALIDATE and action != previous_action:
         log.warning(
             "survey action rejected due to invalid workflow state | "
             "user=%s | course_id=%s | previous_action=%s | action=%s",
-            username,
+            user.username,
             course_id,
             previous_action,
             action,
@@ -683,7 +690,6 @@ def submit_survey(request):
             "answers": request_metadata.get("answers", []),
         }
 
-    # Add survey action metadata WITHOUT deleting name-validate.
     merged_metadata = _merge_action_metadata(
         existing_metadata=existing_metadata,
         action=action,
@@ -691,105 +697,73 @@ def submit_survey(request):
     )
 
     # ---------------------------------------------------------------
-    # Save survey action
-    #
-    # SAME DB ROW
-    # ---------------------------------------------------------------
-
-    response, created = LearnerSurvey.objects.update_or_create(
-        user=request.user,
-        course_id=course_id,
-        survey_id=CERTIFICATE_SURVEY_ID,
-        defaults={
-            "action": action,
-            "metadata": merged_metadata,
-        },
-    )
-
-    log.info(
-        "survey action saved | user=%s | course_id=%s | "
-        "response_id=%s | action=%s | created=%s | metadata_keys=%s",
-        username,
-        course_id,
-        response.id,
-        action,
-        created,
-        list(response.metadata.keys()),
-    )
-
-    # ---------------------------------------------------------------
-    # Generate certificate
+    # Generate certificate metadata 
+    # UPDATE survey
+    # generate certificate
+    # UPDATE certificate
     # ---------------------------------------------------------------
 
     try:
         _generate_certificate(
-            request.user,
+            user,
             course_id,
         )
-
-    except Exception:
+    except Exception as ex:
         log.exception(
-            "certificate generation failed | user=%s | course_id=%s | "
-            "response_id=%s | action=%s",
-            username,
+            "certificate generation failed | "
+            "user=%s | course_id=%s | exception=%s",
+            user.username,
             course_id,
-            response.id,
-            action,
+            ex,
         )
-        raise
 
-    # ---------------------------------------------------------------
-    # Add certificate metadata
-    #
-    # IMPORTANT:
-    # Existing metadata is preserved.
-    #
-    # {
-    #     "name-validate": {...},
-    #     "survey-submit": {...},
-    #     "certificate": {...}
-    # }
-    # ---------------------------------------------------------------
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Certificate generation failed.",
+            },
+            status=500,
+        )
 
-    certificate_metadata = _get_certificate_metadata(
-        request,
-        course_id,
+    certificate_metadata = (
+        _get_certificate_metadata(
+            request,
+            course_id,
+        )
     )
 
     final_metadata = _merge_action_metadata(
-        existing_metadata=response.metadata,
+        existing_metadata=merged_metadata,
         action=LearnerSurvey.ACTION_CERTIFICATE,
         action_metadata=certificate_metadata,
     )
 
     # ---------------------------------------------------------------
-    # IMPORTANT:
-    # Update the SAME row to certificate.
+    # ONE DB WRITE
+    #
+    # The row directly goes to certificate state.
     # ---------------------------------------------------------------
 
-    previous_action_before_certificate = response.action
-
-    response.action = LearnerSurvey.ACTION_CERTIFICATE
-    response.metadata = final_metadata
-
-    response.save(
-        update_fields=[
-            "action",
-            "metadata",
-            "updated_at",
-        ]
+    response, created = (
+        LearnerSurvey.objects.update_or_create(
+            user=user,
+            course_id=course_id,
+            survey_id=CERTIFICATE_SURVEY_ID,
+            defaults={
+                "action": LearnerSurvey.ACTION_CERTIFICATE,
+                "metadata": final_metadata,
+            },
+        )
     )
 
     log.info(
-        "certificate action saved | user=%s | course_id=%s | "
-        "response_id=%s | previous_action=%s | action=%s | "
-        "metadata_keys=%s",
-        username,
+        "certificate workflow completed | "
+        "user_id=%s | course_id=%s | "
+        "response_id=%s | action=%s",
+        getattr(user, "id", None),
         course_id,
         response.id,
-        previous_action_before_certificate,
         response.action,
-        list(response.metadata.keys()),
     )
 
     message = (
@@ -801,28 +775,24 @@ def submit_survey(request):
     return JsonResponse({
         "success": True,
         "id": response.id,
-
-        # Final DB state.
         "action": LearnerSurvey.ACTION_CERTIFICATE,
         "current_action": LearnerSurvey.ACTION_CERTIFICATE,
-
         "name_validated": True,
-
         "survey_submitted": (
             action == LearnerSurvey.ACTION_SURVEY_SUBMIT
         ),
-
         "survey_skipped": (
             action == LearnerSurvey.ACTION_SURVEY_SKIP
         ),
-
         "completed": True,
-
         "metadata": response.metadata,
-
         "message": message,
     })
 
+
+# ----------------------------------------------------------------------
+# Certificate wizard
+# ----------------------------------------------------------------------
 
 @login_required
 @require_GET
@@ -834,10 +804,18 @@ def certificate_generation_view(request):
     """
 
     course_id = request.GET.get("course_id")
+    user_email = request.GET.get("email") or request.user.email
 
     if not course_id:
         return HttpResponse(
             "course_id is required",
+            status=400,
+        )
+    try:
+        user = User.objects.get(email=user_email)
+    except User.DoesNotExist:
+        return HttpResponse(
+            "user not found",
             status=400,
         )
 
@@ -847,35 +825,32 @@ def certificate_generation_view(request):
         course_id,
     )
 
-    eligible, eligibility_details = is_eligible_for_certificate(
-        request.user,
-        course_id,
-    )
+    # ---------------------------------------------------------------
+    # Determine the initial step based on the database state
+    # ---------------------------------------------------------------
+    learner_survey = _get_current_action(request.user, course_id)
+    current_action = learner_survey.action if learner_survey else None
 
-    if not request.user.is_staff and not eligible:
-        log.warning(
-            "certificate_generation_view denied | user=%s | "
-            "course_id=%s | details=%s",
-            request.user.username,
-            course_id,
-            eligibility_details,
-        )
+    if current_action == LearnerSurvey.ACTION_CERTIFICATE:
+        initial_step = 3
 
-        return HttpResponse(
-            "You are not eligible for a certificate.",
-            status=403,
-        )
+    elif current_action in {
+        LearnerSurvey.ACTION_NAME_VALIDATE,
+        LearnerSurvey.ACTION_SURVEY_SKIP,
+    }:
+        initial_step = 2
 
-    context = _get_certificate_context(
-        request,
-        course_id,
-    )
+    else:
+        initial_step = 1
+
+    context = _get_certificate_context(request, course_id)
 
     context.update({
         "status_url": "/extras/certificate/status/",
         "submit_url": "/extras/survey/submit/",
         "download_url": "/extras/certificate/download/",
-        "user": request.user,
+        "user": user,
+        "initial_step": initial_step,
     })
 
     return render_to_response(
@@ -885,82 +860,106 @@ def certificate_generation_view(request):
     )
 
 
+# ----------------------------------------------------------------------
+# Certificate download
+# ----------------------------------------------------------------------
+
 @login_required
 @require_GET
 def certificate_download(request):
     """
     GET /extras/certificate/download/?course_id=...
 
-    Downloads the certificate only when current action is
-    `certificate`.
+    Generates and downloads the final certificate PDF.
     """
-
     course_id = request.GET.get("course_id")
+    user_email = request.GET.get("email") or request.user.email
 
     if not course_id:
-        return HttpResponse(
-            "course_id is required",
-            status=400,
-        )
+        return HttpResponse("course_id is required", status=400)
+    try:
+        user = User.objects.get(email=user_email)
+    except User.DoesNotExist:
+        return HttpResponse("user not found", status=400)
 
-    learner_survey = _get_current_action(
-        request.user,
-        course_id,
-    )
+    learner_survey = _get_current_action(user, course_id)
 
-    current_action = (
-        learner_survey.action
-        if learner_survey
-        else None
-    )
+    current_action = learner_survey.action if learner_survey else None
 
     log.info(
         "certificate_download called | user=%s | course_id=%s | "
         "response_id=%s | action=%s",
-        request.user.username,
+        user.username,
         course_id,
         getattr(learner_survey, "id", None),
         current_action,
     )
 
-    if current_action != LearnerSurvey.ACTION_CERTIFICATE:
-        log.warning(
-            "certificate_download denied | user=%s | "
-            "course_id=%s | action=%s",
-            request.user.username,
-            course_id,
-            current_action,
-        )
-
+    if current_action not in {
+        LearnerSurvey.ACTION_CERTIFICATE,
+        LearnerSurvey.ACTION_SURVEY_SKIP,
+    }:
         return JsonResponse(
             {
                 "success": False,
-                "error": "Certificate has not been generated yet.",
+                "error": (
+                    "Certificate has not been generated yet."
+                ),
             },
             status=403,
         )
 
-    context = _get_certificate_context(
-        request,
-        course_id,
-    )
+    context = _get_certificate_context(request, course_id)
 
-    context.update({
-        "status_url": "/extras/certificate/status/",
-        "submit_url": "/extras/survey/submit/",
-        "download_url": "/extras/certificate/download/",
-        "user": request.user,
-    })
+    # ---------------------------------------------------------------
+    # Render HTML
+    # ---------------------------------------------------------------
 
-    response = render_to_response(
-        CERTIFICATE_FINAL_TEMPLATE,
+    html_string = render_to_string(
+        DOWNLOAD_CERTIFICATE_TEMPLATE,
         context,
         request=request,
     )
 
-    filename = f"CERT-{request.user.username}.html"
-    response["Content-Disposition"] = (
-        f"attachment; filename={filename}"
+    # ---------------------------------------------------------------
+    # Generate PDF
+    # ---------------------------------------------------------------
+
+    try:
+        pdf_file = weasyprint.HTML(
+            string=html_string,
+            base_url=request.build_absolute_uri(),
+        ).write_pdf()
+
+    except Exception as ex:  # pylint: disable=broad-except
+        log.exception(
+            "PDF generation failed | "
+            "user_id=%s | course_id=%s | error=%s",
+            user.id,
+            course_id,
+            ex,
+        )
+
+        return HttpResponse(
+            "Failed to generate PDF certificate.",
+            status=500,
+        )
+
+    # ---------------------------------------------------------------
+    # Return PDF
+    # ---------------------------------------------------------------
+
+    response = HttpResponse(
+        pdf_file,
+        content_type="application/pdf",
     )
+
+    filename = (
+        f"CERT-{request.user.username}.pdf"
+    )
+
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename="{filename}"'
 
     return response

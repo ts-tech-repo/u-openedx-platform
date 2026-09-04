@@ -25,10 +25,6 @@ class LearnerSurveyAdmin(admin.ModelAdmin):
     )
     readonly_fields = (
         "user",
-        "course_id",
-        "survey_id",
-        "action",
-        "metadata",
         "created_at",
         "updated_at",
     )
@@ -39,11 +35,3 @@ class LearnerSurveyAdmin(admin.ModelAdmin):
         return f"{obj.user.username} ({obj.user.email})"
     learner.short_description = "Learner"
     learner.admin_order_field = "user__username"
-
-    def has_add_permission(self, request):
-        # Responses are only ever created via the API, never by hand.
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        # Read-only in the admin — this is a reporting view.
-        return False

@@ -43,7 +43,7 @@ class LearnerSurvey(models.Model):
         (ACTION_NAME_VALIDATE, "name-validated"),
         (ACTION_SURVEY_SUBMIT, "survey-submitted"),
         (ACTION_SURVEY_SKIP, "survey-skipped"),
-        (ACTION_CERTIFICATE, "certificate"),
+        (ACTION_CERTIFICATE, "certificate-generated"),
     )
 
     user = models.ForeignKey(
@@ -64,11 +64,18 @@ class LearnerSurvey(models.Model):
         app_label = "custom_lms"
         # One response per learner, per survey, per course. Resubmitting
         # updates the existing row instead of creating a duplicate.
-        unique_together = ("user", "course_id", "survey_id")
-        indexes = [
-            models.Index(fields=["user", "course_id", "survey_id"]),
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "course_id", "survey_id"],
+                name="unique_learner_course_survey",
+            ),
         ]
-
+        indexes = [
+            models.Index(
+                fields=["user", "course_id", "survey_id"],
+                name="learner_survey_lookup_idx",
+            ),
+        ]
     @property
     def skipped(self):
         return self.action == self.ACTION_SURVEY_SKIP
@@ -79,6 +86,5 @@ class LearnerSurvey(models.Model):
 
     def __str__(self):
         return (
-            f"SurveyResponse(user_id={self.user_id}, course_id={self.course_id}, "
-            f"survey_id={self.survey_id}, action={self.action})"
+            f"LearnerSurvey: {self.course_id}_{self.user.username}"
         )
