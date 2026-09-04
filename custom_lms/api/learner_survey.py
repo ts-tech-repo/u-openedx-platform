@@ -38,6 +38,7 @@ The row's `metadata` field preserves details for every action:
 
 import json
 import logging
+import time
 import weasyprint
 
 from django.conf import settings
@@ -310,10 +311,10 @@ def certificate_status(request):
             status=400,
         )
 
-    user_email = request.GET.get("email") or request.user.email
+    user_email = request.GET.get("email")
     
     try:
-        user = User.objects.get(email=user_email)
+        user = User.objects.get(email=user_email) if user_email else request.user
     except User.DoesNotExist:
         return JsonResponse(
             {"error": "user not found"},
@@ -454,17 +455,33 @@ def submit_survey(request):
         survey-submit
         survey-skip
 
-    The final certificate state is stored in the same LearnerSurvey row.
+    Tracks detailed timing for every workflow step.
     """
 
+    request_start = time.monotonic()
+
+    log.info(
+        "=== SURVEY WORKFLOW START === | "
+        "user=%s | path=%s | method=%s",
+        request.user.username,
+        request.path,
+        request.method,
+    )
 
     # ---------------------------------------------------------------
     # Parse JSON
     # ---------------------------------------------------------------
 
+    step_start = time.monotonic()
+
     try:
         data = json.loads(request.body)
     except (TypeError, ValueError):
+        log.warning(
+            "survey step=JSON_PARSE_FAILED | elapsed=%.4fs",
+            time.monotonic() - step_start,
+        )
+
         return JsonResponse(
             {
                 "success": False,
@@ -474,32 +491,61 @@ def submit_survey(request):
         )
         
     log.info(
-            "submit_survey called | Payload: %s",
-            json.dumps(data),
-        )
+        "survey step=JSON_PARSE | elapsed=%.4fs | payload_keys=%s",
+        time.monotonic() - step_start,
+        list(data.keys()),
+    )
 
     survey_id = data.get("survey_id")
     course_id = data.get("course_id")
     action = data.get("action")
-    request_metadata = data.get(
-        "metadata",
-        {},
+    request_metadata = data.get("metadata", {})
+    user_email = data.get("user_email", "")
+
+    log.info(
+        "survey request parsed | "
+        "user=%s | email=%s | course_id=%s | survey_id=%s | action=%s",
+        request.user.username,
+        user_email,
+        course_id,
+        survey_id,
+        action,
     )
-    user_email = data.get("user_email", request.user.email)
-    
-    
 
     # ---------------------------------------------------------------
-    # Basic validation
+    # User lookup
     # ---------------------------------------------------------------
-    
+
+    step_start = time.monotonic()
+
     try:
-        user = User.objects.get(email=user_email)
+        user = User.objects.get(email=user_email) if user_email else request.user
     except User.DoesNotExist:
+        log.warning(
+            "survey step=USER_LOOKUP_FAILED | "
+            "email=%s | elapsed=%.4fs",
+            user_email,
+            time.monotonic() - step_start,
+        )
+
         return JsonResponse(
             {"error": "user not found"},
             status=400,
         )
+
+    log.info(
+        "survey step=USER_LOOKUP | "
+        "user_id=%s | username=%s | elapsed=%.4fs",
+        user.id,
+        user.username,
+        time.monotonic() - step_start,
+    )
+
+    # ---------------------------------------------------------------
+    # Basic validation
+    # ---------------------------------------------------------------
+
+    step_start = time.monotonic()
 
     if not survey_id:
         return JsonResponse(
@@ -536,9 +582,10 @@ def submit_survey(request):
 
     if action not in allowed_actions:
         log.warning(
-            "submit_survey invalid action | user=%s | action=%s",
-            user.username,
+            "survey step=ACTION_VALIDATION_FAILED | "
+            "action=%s | elapsed=%.4fs",
             action,
+            time.monotonic() - step_start,
         )
 
         return JsonResponse(
@@ -561,10 +608,26 @@ def submit_survey(request):
             status=400,
         )
 
+    log.info(
+        "survey step=VALIDATION_COMPLETE | "
+        "course_id=%s | requested_action=%s | elapsed=%.4fs",
+        course_id,
+        action,
+        time.monotonic() - step_start,
+    )
+
+    # ---------------------------------------------------------------
+    # Get current DB state
+    # ---------------------------------------------------------------
+
+    step_start = time.monotonic()
+
     learner_survey = _get_current_action(
         user,
         course_id,
     )
+
+    db_lookup_elapsed = time.monotonic() - step_start
 
     previous_action = (
         learner_survey.action
@@ -574,20 +637,22 @@ def submit_survey(request):
 
     existing_metadata = (
         learner_survey.metadata
-        if learner_survey and isinstance(learner_survey.metadata, dict)
+        if learner_survey
+        and isinstance(learner_survey.metadata, dict)
         else {}
     )
 
     log.info(
-        "submit_survey previous state | user=%s | course_id=%s | "
-        "response_id=%s | previous_action=%s | requested_action=%s | "
-        "existing_metadata_keys=%s",
-        user.username,
+        "survey step=GET_CURRENT_ACTION | "
+        "user_id=%s | course_id=%s | "
+        "response_id=%s | previous_action=%s | "
+        "requested_action=%s | elapsed=%.4fs",
+        user.id,
         course_id,
         getattr(learner_survey, "id", None),
         previous_action,
         action,
-        list(existing_metadata.keys()),
+        db_lookup_elapsed,
     )
 
     # ---------------------------------------------------------------
@@ -596,7 +661,20 @@ def submit_survey(request):
 
     if action == LearnerSurvey.ACTION_NAME_VALIDATE:
 
+        log.info(
+            "survey workflow ACTION=name-validate START | "
+            "user_id=%s | course_id=%s | previous_action=%s",
+            user.id,
+            course_id,
+            previous_action,
+        )
+
         if previous_action == LearnerSurvey.ACTION_CERTIFICATE:
+            log.warning(
+                "survey ACTION=name-validate REJECTED | "
+                "reason=certificate_already_generated"
+            )
+
             return JsonResponse(
                 {
                     "success": False,
@@ -616,6 +694,12 @@ def submit_survey(request):
             action_metadata=action_metadata,
         )
 
+        # -----------------------------------------------------------
+        # NAME VALIDATION DB WRITE
+        # -----------------------------------------------------------
+
+        step_start = time.monotonic()
+
         response, created = LearnerSurvey.objects.update_or_create(
             user=user,
             course_id=course_id,
@@ -626,15 +710,31 @@ def submit_survey(request):
             },
         )
 
+        db_write_elapsed = time.monotonic() - step_start
+
         log.info(
-            "name validation saved | user=%s | course_id=%s | "
-            "response_id=%s | created=%s | action=%s | metadata_keys=%s",
-            user.username,
+            "survey step=NAME_VALIDATE_DB_WRITE | "
+            "user_id=%s | course_id=%s | "
+            "response_id=%s | created=%s | action=%s | "
+            "elapsed=%.4fs",
+            user.id,
             course_id,
             response.id,
             created,
             response.action,
-            list(response.metadata.keys()),
+            db_write_elapsed,
+        )
+
+        total_elapsed = time.monotonic() - request_start
+
+        log.info(
+            "=== SURVEY WORKFLOW END === | "
+            "action=name-validate | "
+            "user_id=%s | course_id=%s | "
+            "total_elapsed=%.4fs",
+            user.id,
+            course_id,
+            total_elapsed,
         )
 
         return JsonResponse({
@@ -651,17 +751,23 @@ def submit_survey(request):
         })
 
     # ---------------------------------------------------------------
-    # SURVEY SUBMIT / SKIP
+    # SURVEY SUBMIT / SKIP WORKFLOW VALIDATION
     # ---------------------------------------------------------------
 
+    step_start = time.monotonic()
+
     if previous_action != LearnerSurvey.ACTION_NAME_VALIDATE and action != previous_action:
+
         log.warning(
-            "survey action rejected due to invalid workflow state | "
-            "user=%s | course_id=%s | previous_action=%s | action=%s",
-            user.username,
+            "survey step=WORKFLOW_STATE_REJECTED | "
+            "user_id=%s | course_id=%s | "
+            "previous_action=%s | requested_action=%s | "
+            "elapsed=%.4fs",
+            user.id,
             course_id,
             previous_action,
             action,
+            time.monotonic() - step_start,
         )
 
         return JsonResponse(
@@ -676,15 +782,24 @@ def submit_survey(request):
             status=409,
         )
 
+    log.info(
+        "survey step=WORKFLOW_STATE_VALID | "
+        "previous_action=%s | requested_action=%s | elapsed=%.4fs",
+        previous_action,
+        action,
+        time.monotonic() - step_start,
+    )
+
     # ---------------------------------------------------------------
     # Build survey metadata
     # ---------------------------------------------------------------
+
+    step_start = time.monotonic()
 
     if action == LearnerSurvey.ACTION_SURVEY_SKIP:
         action_metadata = {
             "answers": [],
         }
-
     else:
         action_metadata = {
             "answers": request_metadata.get("answers", []),
@@ -696,12 +811,27 @@ def submit_survey(request):
         action_metadata=action_metadata,
     )
 
+    log.info(
+        "survey step=METADATA_BUILD | "
+        "action=%s | answers_count=%s | elapsed=%.4fs",
+        action,
+        len(action_metadata.get("answers", [])),
+        time.monotonic() - step_start,
+    )
+
     # ---------------------------------------------------------------
-    # Generate certificate metadata 
-    # UPDATE survey
-    # generate certificate
-    # UPDATE certificate
+    # GENERATE CERTIFICATE
     # ---------------------------------------------------------------
+
+    log.info(
+        "certificate step=GENERATION START | "
+        "user_id=%s | course_id=%s | action=%s",
+        user.id,
+        course_id,
+        action,
+    )
+
+    step_start = time.monotonic()
 
     try:
         _generate_certificate(
@@ -709,12 +839,24 @@ def submit_survey(request):
             course_id,
         )
     except Exception as ex:
+        generation_elapsed = time.monotonic() - step_start
+
         log.exception(
-            "certificate generation failed | "
-            "user=%s | course_id=%s | exception=%s",
-            user.username,
+            "certificate step=GENERATION FAILED | "
+            "user_id=%s | course_id=%s | "
+            "action=%s | elapsed=%.4fs | exception=%s",
+            user.id,
             course_id,
+            action,
+            generation_elapsed,
             ex,
+        )
+
+        log.info(
+            "=== SURVEY WORKFLOW END === | "
+            "status=FAILED | stage=certificate_generation | "
+            "total_elapsed=%.4fs",
+            time.monotonic() - request_start,
         )
 
         return JsonResponse(
@@ -725,11 +867,45 @@ def submit_survey(request):
             status=500,
         )
 
-    certificate_metadata = (
-        _get_certificate_metadata(
-            request,
-            course_id,
-        )
+    generation_elapsed = time.monotonic() - step_start
+
+    log.info(
+        "certificate step=GENERATION COMPLETE | "
+        "user_id=%s | course_id=%s | "
+        "elapsed=%.4fs",
+        user.id,
+        course_id,
+        generation_elapsed,
+    )
+
+    # ---------------------------------------------------------------
+    # GET CERTIFICATE METADATA
+    # ---------------------------------------------------------------
+
+    log.info(
+        "certificate step=GET_METADATA START | "
+        "user_id=%s | course_id=%s",
+        user.id,
+        course_id,
+    )
+
+    step_start = time.monotonic()
+
+    certificate_metadata = _get_certificate_metadata(
+        request,
+        course_id,
+    )
+
+    metadata_elapsed = time.monotonic() - step_start
+
+    log.info(
+        "certificate step=GET_METADATA COMPLETE | "
+        "user_id=%s | course_id=%s | "
+        "elapsed=%.4fs | metadata_keys=%s",
+        user.id,
+        course_id,
+        metadata_elapsed,
+        list(certificate_metadata.keys()),
     )
 
     final_metadata = _merge_action_metadata(
@@ -739,31 +915,65 @@ def submit_survey(request):
     )
 
     # ---------------------------------------------------------------
-    # ONE DB WRITE
-    #
-    # The row directly goes to certificate state.
+    # FINAL DB WRITE
     # ---------------------------------------------------------------
 
-    response, created = (
-        LearnerSurvey.objects.update_or_create(
-            user=user,
-            course_id=course_id,
-            survey_id=CERTIFICATE_SURVEY_ID,
-            defaults={
-                "action": LearnerSurvey.ACTION_CERTIFICATE,
-                "metadata": final_metadata,
-            },
-        )
+    log.info(
+        "certificate step=FINAL_DB_WRITE START | "
+        "user_id=%s | course_id=%s | "
+        "final_action=%s",
+        user.id,
+        course_id,
+        LearnerSurvey.ACTION_CERTIFICATE,
     )
 
+    step_start = time.monotonic()
+
+    response, created = LearnerSurvey.objects.update_or_create(
+        user=user,
+        course_id=course_id,
+        survey_id=CERTIFICATE_SURVEY_ID,
+        defaults={
+            "action": LearnerSurvey.ACTION_CERTIFICATE,
+            "metadata": final_metadata,
+        },
+    )
+
+    final_db_elapsed = time.monotonic() - step_start
+
     log.info(
-        "certificate workflow completed | "
+        "certificate step=FINAL_DB_WRITE COMPLETE | "
         "user_id=%s | course_id=%s | "
-        "response_id=%s | action=%s",
-        getattr(user, "id", None),
+        "response_id=%s | created=%s | action=%s | "
+        "elapsed=%.4fs",
+        user.id,
         course_id,
         response.id,
+        created,
         response.action,
+        final_db_elapsed,
+    )
+
+    # ---------------------------------------------------------------
+    # COMPLETE
+    # ---------------------------------------------------------------
+
+    total_elapsed = time.monotonic() - request_start
+
+    log.info(
+        "=== SURVEY WORKFLOW COMPLETE === | "
+        "user_id=%s | course_id=%s | "
+        "requested_action=%s | final_action=%s | "
+        "generation_time=%.4fs | metadata_time=%.4fs | "
+        "final_db_time=%.4fs | total_time=%.4fs",
+        user.id,
+        course_id,
+        action,
+        response.action,
+        generation_elapsed,
+        metadata_elapsed,
+        final_db_elapsed,
+        total_elapsed,
     )
 
     message = (
@@ -789,7 +999,6 @@ def submit_survey(request):
         "message": message,
     })
 
-
 # ----------------------------------------------------------------------
 # Certificate wizard
 # ----------------------------------------------------------------------
@@ -803,33 +1012,100 @@ def certificate_generation_view(request):
     Renders the certificate wizard.
     """
 
+    request_start = time.monotonic()
+
     course_id = request.GET.get("course_id")
-    user_email = request.GET.get("email") or request.user.email
+    user_email = request.GET.get("email")
+
+    log.info(
+        "=== CERTIFICATE VIEW START === | "
+        "user=%s | course_id=%s | email=%s",
+        request.user.username,
+        course_id,
+        user_email,
+    )
 
     if not course_id:
+        log.warning(
+            "certificate_view failed | reason=missing_course_id | "
+            "elapsed=%.4fs",
+            time.monotonic() - request_start,
+        )
+
         return HttpResponse(
             "course_id is required",
             status=400,
         )
+
+    # ---------------------------------------------------------------
+    # User lookup
+    # ---------------------------------------------------------------
+
+    step_start = time.monotonic()
+
     try:
-        user = User.objects.get(email=user_email)
+        user = (
+            User.objects.get(email=user_email)
+            if user_email
+            else request.user
+        )
     except User.DoesNotExist:
+
+        log.warning(
+            "certificate_view USER_LOOKUP_FAILED | "
+            "email=%s | elapsed=%.4fs",
+            user_email,
+            time.monotonic() - step_start,
+        )
+
         return HttpResponse(
             "user not found",
             status=400,
         )
 
     log.info(
-        "certificate_generation_view | user=%s | course_id=%s",
-        request.user.username,
-        course_id,
+        "certificate_view USER_LOOKUP | "
+        "user_id=%s | elapsed=%.4fs",
+        user.id,
+        time.monotonic() - step_start,
     )
 
     # ---------------------------------------------------------------
-    # Determine the initial step based on the database state
+    # Get current action
     # ---------------------------------------------------------------
-    learner_survey = _get_current_action(request.user, course_id)
-    current_action = learner_survey.action if learner_survey else None
+
+    step_start = time.monotonic()
+
+    learner_survey = _get_current_action(
+        request.user,
+        course_id,
+    )
+
+    action_elapsed = time.monotonic() - step_start
+
+    current_action = (
+        learner_survey.action
+        if learner_survey
+        else None
+    )
+
+    log.info(
+        "certificate_view GET_CURRENT_ACTION | "
+        "user_id=%s | course_id=%s | "
+        "response_id=%s | current_action=%s | "
+        "elapsed=%.4fs",
+        request.user.id,
+        course_id,
+        getattr(learner_survey, "id", None),
+        current_action,
+        action_elapsed,
+    )
+
+    # ---------------------------------------------------------------
+    # Determine initial step
+    # ---------------------------------------------------------------
+
+    step_start = time.monotonic()
 
     if current_action == LearnerSurvey.ACTION_CERTIFICATE:
         initial_step = 3
@@ -843,7 +1119,33 @@ def certificate_generation_view(request):
     else:
         initial_step = 1
 
-    context = _get_certificate_context(request, course_id)
+    log.info(
+        "certificate_view INITIAL_STEP | "
+        "current_action=%s | initial_step=%s | elapsed=%.4fs",
+        current_action,
+        initial_step,
+        time.monotonic() - step_start,
+    )
+
+    # ---------------------------------------------------------------
+    # Certificate context
+    # ---------------------------------------------------------------
+
+    step_start = time.monotonic()
+
+    context = _get_certificate_context(
+        request,
+        course_id,
+    )
+
+    context_elapsed = time.monotonic() - step_start
+
+    log.info(
+        "certificate_view GET_CONTEXT | "
+        "course_id=%s | elapsed=%.4fs",
+        course_id,
+        context_elapsed,
+    )
 
     context.update({
         "status_url": "/extras/certificate/status/",
@@ -853,12 +1155,38 @@ def certificate_generation_view(request):
         "initial_step": initial_step,
     })
 
-    return render_to_response(
+    # ---------------------------------------------------------------
+    # Render
+    # ---------------------------------------------------------------
+
+    step_start = time.monotonic()
+
+    response = render_to_response(
         CERTIFICATE_WIZARD_TEMPLATE,
         context,
         request=request,
     )
 
+    render_elapsed = time.monotonic() - step_start
+    total_elapsed = time.monotonic() - request_start
+
+    log.info(
+        "=== CERTIFICATE VIEW COMPLETE === | "
+        "user_id=%s | course_id=%s | "
+        "current_action=%s | initial_step=%s | "
+        "action_lookup=%.4fs | context=%.4fs | "
+        "render=%.4fs | total=%.4fs",
+        user.id,
+        course_id,
+        current_action,
+        initial_step,
+        action_elapsed,
+        context_elapsed,
+        render_elapsed,
+        total_elapsed,
+    )
+
+    return response
 
 # ----------------------------------------------------------------------
 # Certificate download
@@ -873,12 +1201,12 @@ def certificate_download(request):
     Generates and downloads the final certificate PDF.
     """
     course_id = request.GET.get("course_id")
-    user_email = request.GET.get("email") or request.user.email
+    user_email = request.GET.get("email")
 
     if not course_id:
         return HttpResponse("course_id is required", status=400)
     try:
-        user = User.objects.get(email=user_email)
+        user = User.objects.get(email=user_email) if user_email else request.user
     except User.DoesNotExist:
         return HttpResponse("user not found", status=400)
 
