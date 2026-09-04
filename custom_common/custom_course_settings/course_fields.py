@@ -22,12 +22,12 @@ def register_enable_certificate_field():
         return
 
     field = Boolean(
-        display_name=_("Enable Certificate"),
+        display_name=_("Custom Certificate"),
         help=_(
             "If enabled, learners who satisfy the course certificate "
             "requirements can receive a certificate."
         ),
-        default=False,
+        default=True,
         scope=Scope.settings,
     )
 

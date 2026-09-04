@@ -64,18 +64,11 @@ class LearnerSurvey(models.Model):
         app_label = "custom_lms"
         # One response per learner, per survey, per course. Resubmitting
         # updates the existing row instead of creating a duplicate.
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "course_id", "survey_id"],
-                name="unique_learner_course_survey",
-            ),
-        ]
+        unique_together = ("user", "course_id", "survey_id")
         indexes = [
-            models.Index(
-                fields=["user", "course_id", "survey_id"],
-                name="learner_survey_lookup_idx",
-            ),
+            models.Index(fields=["user", "course_id", "survey_id"]),
         ]
+
     @property
     def skipped(self):
         return self.action == self.ACTION_SURVEY_SKIP
