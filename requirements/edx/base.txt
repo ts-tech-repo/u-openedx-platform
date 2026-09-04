@@ -1309,6 +1309,7 @@ zipp==3.23.0
 
 zxcvbn
 pycryptodome
+weasyprint
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
