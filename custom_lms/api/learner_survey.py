@@ -601,7 +601,7 @@ def certificate_download(request):
         
     download_filename = f"{hashed_filename}.pdf"
     if BASE_URL and safe_course_id_str and download_filename:
-        s3_key = existing_s3_key or f"{BASE_URL}/learner_certificates/{safe_course_id_str}/{download_filename}"
+        s3_key = existing_s3_key or f"{BASE_URL}_learner_certificates_{safe_course_id_str}_{download_filename}"
 
     # 2. Render HTML and Generate PDF
     CERTIFICATE_CONFIG = _get_certificate_config()
