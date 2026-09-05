@@ -619,7 +619,6 @@ def certificate_download(request):
         upload_response = upload_file_to_s3(
             file_encoded=pdf_bytes,
             file_content_type="application/pdf",
-            filename=download_filename,
             s3_key=s3_key,
             S3_BUCKET_NAME=S3_BUCKET_NAME,
             CLOUDFRONT_DOMAIN=CLOUDFRONT_DOMAIN
