@@ -605,11 +605,9 @@ def certificate_download(request):
         pdf_bytes = weasyprint.HTML(
             string=html_string,
             base_url=request.build_absolute_uri(),
-        ).write_pdf()
-        logger.info(
-            "PDF generated successfully | user_id=%s | course_id=%s | pdf_bytes=%s", 
-            user.id, course_id, pdf_bytes
-            )
+        ).write_pdf(
+            font_config=weasyprint.fonts.FontConfiguration(),
+        )
     except Exception as ex:
         logger.exception("PDF generation failed | user_id=%s | course_id=%s | error=%s", user.id, course_id, ex)
         return HttpResponse("Failed to generate PDF certificate.", status=500)
