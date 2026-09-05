@@ -621,7 +621,6 @@ def certificate_download(request):
             font_config=FontConfiguration(),
         )
     except Exception as ex:
-        logger.exception("PDF generation failed | user_id=%s | course_id=%s | error=%s", user.id, course_id, ex)
         return HttpResponse("Failed to generate PDF certificate.", status=500)
 
     # 3. Upload to S3 ONLY if it hasn't been uploaded yet

@@ -211,9 +211,8 @@ certificate_date='',
      */
     .signature-name {
         height: 80px;
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
+        text-align: center;
+        line-height: 80px; /* Pushes the inline-block image to the vertical center of this line box */
         margin-bottom: 4px;
         padding: 0;
     }
@@ -226,11 +225,12 @@ certificate_date='',
      * ============================================================
      */
     .signature-name img {
-        display: block;
+        display: inline-block; /* Changed from block */
         max-height: 70px;
         width: auto;
         max-width: 200px;
         object-fit: contain;
+        vertical-align: bottom; /* Aligns the image to the bottom of the 80px line-height container */
     }
  
     /*
