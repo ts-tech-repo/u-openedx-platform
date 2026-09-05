@@ -17,6 +17,7 @@ Only one LearnerSurvey row exists for a learner/course/survey.
 
 import json
 import logging
+import weasyprint
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -31,6 +32,8 @@ from common.djangoapps.edxmako.shortcuts import (
     render_to_string,
 )
 
+from custom_common.utils.upload_to_s3 import upload_file_to_s3
+from custom_common.utils.deteministic_safe_aes import encrypt
 from custom_lms.models.learner_survey import LearnerSurvey
 from custom_lms.views.eligibility import is_eligible_for_certificate
 
@@ -39,7 +42,7 @@ from openedx.core.djangoapps.site_configuration import (
 )
 
 User = get_user_model()
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
@@ -63,6 +66,9 @@ SUPPORT_EMAIL = configuration_helpers.get_value(
     "contact_mailing_address",
     getattr(settings, "CONTACT_EMAIL", {}),
 )
+
+S3_BUCKET_NAME = CERTIFICTAE_CONFIG.get("S3_BUCKET_NAME", None)
+CLOUDFRONT_DOMAIN = CERTIFICTAE_CONFIG.get("CLOUDFRONT_DOMAIN", None)
 
 
 # ----------------------------------------------------------------------
@@ -137,7 +143,7 @@ def _get_certificate_eligibility(user, course_id):
         timezone.now() - start_time
     ).total_seconds()
 
-    log.info(
+    logger.info(
         "certificate eligibility calculated | "
         "user_id=%s | course_id=%s | eligible=%s | elapsed=%.3fs",
         getattr(user, "id", None),
@@ -246,7 +252,7 @@ def _generate_certificate(user, course_id):
     Certificate is dynamically rendered by the certificate template.
     """
 
-    log.info(
+    logger.info(
         "certificate generation triggered | user=%s | user_id=%s | course_id=%s",
         getattr(user, "username", "unknown"),
         getattr(user, "id", None),
@@ -280,7 +286,7 @@ def certificate_status(request):
     if not user:
         return JsonResponse({"error": "user not found"}, status=400)
 
-    log.info("certificate_status called | user_id=%s | course_id=%s", getattr(user, "id", None), course_id)
+    logger.info("certificate_status called | user_id=%s | course_id=%s", getattr(user, "id", None), course_id)
     # ---------------------------------------------------------------
     # Eligibility
     # ---------------------------------------------------------------
@@ -324,6 +330,13 @@ def certificate_status(request):
         "program_name": SURVEY_PROGRAM_NAME,
         "certificate_date": _certificate_date_display(),
     }
+    
+    logger.info(
+        "certificate_status response | user_id=%s | course_id=%s | response_payload=%s",
+        getattr(user, "id", None),
+        course_id,
+        response_payload,
+    )
 
     return JsonResponse(response_payload)
 
@@ -346,7 +359,7 @@ def submit_survey(request):
 
     Tracks detailed timing for every workflow step.
     """
-    log.info("=== SURVEY WORKFLOW START === | user=%s | path=%s | method=%s", request.user.username, request.path, request.method)
+    logger.info("=== SURVEY WORKFLOW START === | user=%s | path=%s | method=%s", request.user.username, request.path, request.method)
 
     try:
         data = json.loads(request.body)
@@ -446,7 +459,7 @@ def submit_survey(request):
     try:
         _generate_certificate(user, course_id)
     except Exception as ex:
-        log.exception("certificate step=GENERATION FAILED | user_id=%s | course_id=%s | exception=%s", user.id, course_id, ex)
+        logger.exception("certificate step=GENERATION FAILED | user_id=%s | course_id=%s | exception=%s", user.id, course_id, ex)
         return JsonResponse({"success": False, "error": "Certificate generation failed."}, status=500)
 
     certificate_metadata = _get_certificate_metadata(user, course_id)
@@ -507,7 +520,7 @@ def certificate_generation_view(request):
     # Optimized: Direct evaluation without redundant dictionary lookups
     if current_action == LearnerSurvey.ACTION_CERTIFICATE:
         initial_step = 3
-    elif current_action == LearnerSurvey.ACTION_SURVEY_SKIP:
+    elif current_action in (LearnerSurvey.ACTION_SURVEY_SKIP, LearnerSurvey.ACTION_NAME_VALIDATE):
         initial_step = 2
     else:
         initial_step = 1
@@ -532,6 +545,12 @@ def certificate_generation_view(request):
 @login_required
 @require_GET
 def certificate_download(request):
+    """
+    GET /extras/certificate/download/?course_id=...
+    
+    Generates the PDF, uploads it to S3/CloudFront (only once), 
+    and ALWAYS returns the PDF bytes + filename as a downloadable attachment.
+    """
     course_id = request.GET.get("course_id")
     user_email = request.GET.get("email")
 
@@ -546,18 +565,98 @@ def certificate_download(request):
     current_action = learner_survey.action if learner_survey else None
 
     if current_action not in {LearnerSurvey.ACTION_CERTIFICATE, LearnerSurvey.ACTION_SURVEY_SKIP}:
-        return JsonResponse({"success": False, "error": "Certificate has not been generated yet."}, status=403)
+        return JsonResponse(
+            {"success": False, "error": "Certificate has not been generated yet."},
+            status=403,
+        )
 
+    # 1. Determine deterministic filename and S3 key
+    BASE_URL = request.build_absolute_uri().strip("/").replace("http://", "https://").replace("https://", "")
+    course_id_str = str(course_id)
+    safe_course_id_str = course_id_str.replace(":", "_").replace("+", "_")
+    
+    # Check if we already have the hashed filename and S3 key in metadata
+    existing_s3_key = None
+    hashed_filename = None
+    
+    if learner_survey and isinstance(learner_survey.metadata, dict):
+        cert_meta = learner_survey.metadata.get(LearnerSurvey.ACTION_CERTIFICATE, {})
+        existing_s3_key = cert_meta.get("s3_key")
+        # Strip .pdf extension if it was saved with it
+        saved_filename = cert_meta.get("filename", "")
+        hashed_filename = saved_filename.replace(".pdf", "") if saved_filename else None
+
+    if not hashed_filename:
+        raw_filename = f"{BASE_URL}|{course_id_str}|{user.email}"
+        hashed_filename = encrypt(raw_filename)
+        
+    download_filename = f"{hashed_filename}.pdf"
+    s3_key = existing_s3_key or f"{BASE_URL}/learner_certificates/{safe_course_id_str}/{download_filename}"
+
+    # 2. Render HTML and Generate PDF
     context = _get_certificate_context(user, course_id)
-    html_string = render_to_string(DOWNLOAD_CERTIFICATE_TEMPLATE, context, request=request)
+    html_string = render_to_string(
+        DOWNLOAD_CERTIFICATE_TEMPLATE,
+        context,
+        request=request,
+    )
 
     try:
-        import weasyprint
-        pdf_file = weasyprint.HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+        pdf_bytes = weasyprint.HTML(
+            string=html_string,
+            base_url=request.build_absolute_uri(),
+        ).write_pdf()
+        logger.info(
+            "PDF generated successfully | user_id=%s | course_id=%s | pdf_bytes=%s", 
+            user.id, course_id, pdf_bytes
+            )
     except Exception as ex:
-        log.exception("PDF generation failed | user_id=%s | course_id=%s | error=%s", user.id, course_id, ex)
+        logger.exception("PDF generation failed | user_id=%s | course_id=%s | error=%s", user.id, course_id, ex)
         return HttpResponse("Failed to generate PDF certificate.", status=500)
 
-    response = HttpResponse(pdf_file, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="CERT-{user.username}.pdf"'
+    # 3. Upload to S3 ONLY if it hasn't been uploaded yet
+    if not existing_s3_key:
+        upload_response = upload_file_to_s3(
+            file_encoded=pdf_bytes,
+            file_content_type="application/pdf",
+            filename=download_filename,
+            s3_key=s3_key,
+            S3_BUCKET_NAME=S3_BUCKET_NAME,
+            CLOUDFRONT_DOMAIN=CLOUDFRONT_DOMAIN
+        )
+
+        if not upload_response.get("error"):
+            cloudfront_url = upload_response.get("data", {}).get("url")
+            logger.info("Certificate uploaded successfully to S3 | url=%s", cloudfront_url)
+            
+            # Update DB with the new S3 metadata
+            existing_metadata = learner_survey.metadata if isinstance(learner_survey.metadata, dict) else {}
+            cert_meta = existing_metadata.get(LearnerSurvey.ACTION_CERTIFICATE, {})
+            
+            cert_meta["cloudfront_url"] = cloudfront_url
+            cert_meta["uploaded_at"] = timezone.now().isoformat()
+            cert_meta["filename"] = download_filename
+            cert_meta["s3_key"] = s3_key
+            
+            existing_metadata[LearnerSurvey.ACTION_CERTIFICATE] = cert_meta
+            
+            learner_survey.metadata = existing_metadata
+            # Optimized: only update the metadata field
+            learner_survey.save(update_fields=['metadata'])
+            logger.info("Saved S3 metadata to LearnerSurvey | user_id=%s", user.id)
+        else:
+            logger.error("Failed to upload certificate to S3 | message=%s", upload_response.get("message"))
+
+    # 4. Return PDF bytes and filename to the user as a downloadable attachment
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{download_filename}"'
+    
+    # Optional: Pass the permanent CloudFront URL in a custom header. 
+    # This allows your frontend to cache the URL and display a "View Certificate" 
+    # button later without needing to hit this download endpoint again.
+    if learner_survey and isinstance(learner_survey.metadata, dict):
+        cf_url = learner_survey.metadata.get(LearnerSurvey.ACTION_CERTIFICATE, {}).get("cloudfront_url")
+        if cf_url and CLOUDFRONT_DOMAIN and (CLOUDFRONT_DOMAIN in cf_url):
+            response["X-Certificate-CloudFront-URL"] = cf_url
+
     return response
