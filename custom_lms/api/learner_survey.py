@@ -41,6 +41,8 @@ from openedx.core.djangoapps.site_configuration import (
     helpers as configuration_helpers,
 )
 
+from weasyprint.text.fonts import FontConfiguration
+
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
@@ -587,7 +589,7 @@ def certificate_download(request):
         hashed_filename = saved_filename.replace(".pdf", "") if saved_filename else None
 
     if not hashed_filename:
-        raw_filename = f"{BASE_URL}|{course_id_str}|{user.email}"
+        raw_filename = f"{user.id}___{learner_survey.survey_uuid}"
         hashed_filename = encrypt(raw_filename)
         
     download_filename = f"{hashed_filename}.pdf"
@@ -606,7 +608,7 @@ def certificate_download(request):
             string=html_string,
             base_url=request.build_absolute_uri(),
         ).write_pdf(
-            font_config=weasyprint.fonts.FontConfiguration(),
+            font_config=FontConfiguration(),
         )
     except Exception as ex:
         logger.exception("PDF generation failed | user_id=%s | course_id=%s | error=%s", user.id, course_id, ex)

@@ -2,6 +2,8 @@
 Models for the custom_lms survey / certificate-eligibility app.
 """
 
+import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -53,7 +55,7 @@ class LearnerSurvey(models.Model):
     )
     course_id = COURSE_ID_FIELD
     survey_id = models.CharField(max_length=255, db_index=True)
-
+    survey_uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     action = models.CharField(max_length=20, choices=ACTION_CHOICES)
     metadata = models.JSONField(default=dict, blank=True)
 
@@ -78,6 +80,4 @@ class LearnerSurvey(models.Model):
         return (self.metadata or {}).get("answers", [])
 
     def __str__(self):
-        return (
-            f"LearnerSurvey: {self.course_id}_{self.user.username}"
-        )
+        return f"LearnerSurvey_{self.survey_uuid}"
