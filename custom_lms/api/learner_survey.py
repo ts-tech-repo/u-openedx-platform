@@ -48,34 +48,16 @@ logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
-# Constants
-# ----------------------------------------------------------------------
-
-CERTIFICATE_CONFIG = configuration_helpers.get_value(
-    "CERTIFICATE_CONFIG",
-    getattr(settings, "CERTIFICATE_CONFIG", {}),
-)
-logger.info("CERTIFICATE_CONFIG: %s", CERTIFICATE_CONFIG)
-CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
-
-CERTIFICATE_WIZARD_TEMPLATE = CERTIFICATE_CONFIG.get("certificate_wizard_template", "cmu_certificate_wizard.html")
-DOWNLOAD_CERTIFICATE_TEMPLATE = CERTIFICATE_CONFIG.get("download_certificate_template", "cmu_certificate.html")
-ELIGIBILITY_CACHE_TIMEOUT = CERTIFICATE_CONFIG.get("eligibility_cache_timeout", 300)
-
-SURVEY_PROGRAM_NAME = CERTIFICATE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
-
-SUPPORT_EMAIL = configuration_helpers.get_value(
-    "contact_mailing_address",
-    getattr(settings, "CONTACT_EMAIL", {}),
-)
-
-S3_BUCKET_NAME = CERTIFICATE_CONFIG.get("S3_BUCKET_NAME", None)
-CLOUDFRONT_DOMAIN = CERTIFICATE_CONFIG.get("CLOUDFRONT_DOMAIN", None)
-
-
-# ----------------------------------------------------------------------
 # Basic helpers
 # ----------------------------------------------------------------------
+
+def _get_certificate_config():
+    CERTIFICATE_CONFIG = configuration_helpers.get_value("CERTIFICATE_CONFIG",
+        getattr(settings, "CERTIFICATE_CONFIG", {}),
+    )
+    logger.info("CERTIFICATE_CONFIG: %s", CERTIFICATE_CONFIG)
+    return CERTIFICATE_CONFIG
+    
 
 def _resolve_user(request, user_email):
     """
@@ -126,6 +108,9 @@ def _get_certificate_eligibility(user, course_id):
     The actual eligibility calculation is cached because it can be
     expensive and is called by multiple endpoints in the workflow.
     """
+
+    CERTIFICATE_CONFIG = _get_certificate_config()
+    ELIGIBILITY_CACHE_TIMEOUT = CERTIFICATE_CONFIG.get("eligibility_cache_timeout", 300)
 
     cache_key = _eligibility_cache_key(user, course_id)
 
@@ -181,6 +166,8 @@ def _clear_certificate_eligibility_cache(user, course_id):
 
 def _get_current_action(user, course_id):
     """Return the single LearnerSurvey row for the learner/course/survey."""
+    CERTIFICATE_CONFIG = _get_certificate_config()
+    CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
     return (
         LearnerSurvey.objects
         .only("id", "action", "metadata")
@@ -228,6 +215,15 @@ def _get_certificate_context(user, course_id):
     Build JSON-serializable certificate context.
     """
 
+    CERTIFICATE_CONFIG = _get_certificate_config()
+    CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
+    SURVEY_PROGRAM_NAME = CERTIFICATE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
+
+    SUPPORT_EMAIL = configuration_helpers.get_value(
+        "contact_mailing_address",
+        getattr(settings, "CONTACT_EMAIL", {}),
+    )
+    
     return {
         "course_id": course_id,
         "survey_id": CERTIFICATE_SURVEY_ID,
@@ -294,6 +290,10 @@ def certificate_status(request):
     # ---------------------------------------------------------------
     
     eligible, eligibility_details = _get_certificate_eligibility(user, course_id)
+
+    CERTIFICATE_CONFIG = _get_certificate_config()
+    CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
+    SURVEY_PROGRAM_NAME = CERTIFICATE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
     
     if not user.is_staff and not eligible:
         return JsonResponse({
@@ -373,6 +373,9 @@ def submit_survey(request):
     action = data.get("action")
     request_metadata = data.get("metadata", {})
     user_email = data.get("user_email", "")
+    
+    CERTIFICATE_CONFIG = _get_certificate_config()
+    CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
 
     user = _resolve_user(request, user_email)
     if not user:
@@ -515,6 +518,9 @@ def certificate_generation_view(request):
     user = _resolve_user(request, user_email)
     if not user:
         return HttpResponse("user not found", status=400)
+    
+    CERTIFICATE_CONFIG = _get_certificate_config()
+    CERTIFICATE_WIZARD_TEMPLATE = CERTIFICATE_CONFIG.get("certificate_wizard_template", "cmu_certificate_wizard.html")
 
     learner_survey = _get_current_action(user, course_id)
     current_action = learner_survey.action if learner_survey else None
@@ -573,7 +579,8 @@ def certificate_download(request):
         )
 
     # 1. Determine deterministic filename and S3 key
-    BASE_URL = request.build_absolute_uri().strip("/").replace("http://", "https://").replace("https://", "")
+    MFE_CONFIG = configuration_helpers.get_value("MFE_CONFIG", getattr(settings, "MFE_CONFIG", {}))
+    BASE_URL = MFE_CONFIG.get("BASE_URL")
     course_id_str = str(course_id)
     safe_course_id_str = course_id_str.replace(":", "_").replace("+", "_")
     
@@ -593,9 +600,12 @@ def certificate_download(request):
         hashed_filename = encrypt(raw_filename)
         
     download_filename = f"{hashed_filename}.pdf"
-    s3_key = existing_s3_key or f"{BASE_URL}/learner_certificates/{safe_course_id_str}/{download_filename}"
+    if BASE_URL and safe_course_id_str and download_filename:
+        s3_key = existing_s3_key or f"{BASE_URL}/learner_certificates/{safe_course_id_str}/{download_filename}"
 
     # 2. Render HTML and Generate PDF
+    CERTIFICATE_CONFIG = _get_certificate_config()
+    DOWNLOAD_CERTIFICATE_TEMPLATE = CERTIFICATE_CONFIG.get("download_certificate_template", "cmu_certificate.html")
     context = _get_certificate_context(user, course_id)
     html_string = render_to_string(
         DOWNLOAD_CERTIFICATE_TEMPLATE,
@@ -615,6 +625,8 @@ def certificate_download(request):
         return HttpResponse("Failed to generate PDF certificate.", status=500)
 
     # 3. Upload to S3 ONLY if it hasn't been uploaded yet
+    S3_BUCKET_NAME = CERTIFICATE_CONFIG.get("S3_BUCKET_NAME", None)
+    CLOUDFRONT_DOMAIN = CERTIFICATE_CONFIG.get("CLOUDFRONT_DOMAIN", None)
     if not existing_s3_key:
         upload_response = upload_file_to_s3(
             file_encoded=pdf_bytes,
