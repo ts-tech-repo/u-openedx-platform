@@ -51,26 +51,26 @@ logger = logging.getLogger(__name__)
 # Constants
 # ----------------------------------------------------------------------
 
-CERTIFICTAE_CONFIG = configuration_helpers.get_value(
+CERTIFICATE_CONFIG = configuration_helpers.get_value(
     "CERTIFICATE_CONFIG",
     getattr(settings, "CERTIFICATE_CONFIG", {}),
 )
-logger.info("CERTIFICATE_CONFIG: %s", CERTIFICTAE_CONFIG)
-CERTIFICATE_SURVEY_ID = CERTIFICTAE_CONFIG.get("survey_id", "course-completion-survey")
+logger.info("CERTIFICATE_CONFIG: %s", CERTIFICATE_CONFIG)
+CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
 
-CERTIFICATE_WIZARD_TEMPLATE = CERTIFICTAE_CONFIG.get("certificate_wizard_template", "cmu_certificate_wizard.html")
-DOWNLOAD_CERTIFICATE_TEMPLATE = CERTIFICTAE_CONFIG.get("download_certificate_template", "cmu_certificate.html")
-ELIGIBILITY_CACHE_TIMEOUT = CERTIFICTAE_CONFIG.get("eligibility_cache_timeout", 300)
+CERTIFICATE_WIZARD_TEMPLATE = CERTIFICATE_CONFIG.get("certificate_wizard_template", "cmu_certificate_wizard.html")
+DOWNLOAD_CERTIFICATE_TEMPLATE = CERTIFICATE_CONFIG.get("download_certificate_template", "cmu_certificate.html")
+ELIGIBILITY_CACHE_TIMEOUT = CERTIFICATE_CONFIG.get("eligibility_cache_timeout", 300)
 
-SURVEY_PROGRAM_NAME = CERTIFICTAE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
+SURVEY_PROGRAM_NAME = CERTIFICATE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
 
 SUPPORT_EMAIL = configuration_helpers.get_value(
     "contact_mailing_address",
     getattr(settings, "CONTACT_EMAIL", {}),
 )
 
-S3_BUCKET_NAME = CERTIFICTAE_CONFIG.get("S3_BUCKET_NAME", None)
-CLOUDFRONT_DOMAIN = CERTIFICTAE_CONFIG.get("CLOUDFRONT_DOMAIN", None)
+S3_BUCKET_NAME = CERTIFICATE_CONFIG.get("S3_BUCKET_NAME", None)
+CLOUDFRONT_DOMAIN = CERTIFICATE_CONFIG.get("CLOUDFRONT_DOMAIN", None)
 
 
 # ----------------------------------------------------------------------
