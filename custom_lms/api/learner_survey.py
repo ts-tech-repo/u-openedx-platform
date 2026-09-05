@@ -580,7 +580,9 @@ def certificate_download(request):
 
     # 1. Determine deterministic filename and S3 key
     MFE_CONFIG = configuration_helpers.get_value("MFE_CONFIG", getattr(settings, "MFE_CONFIG", {}))
-    BASE_URL = MFE_CONFIG.get("BASE_URL")
+    BASE_URL = MFE_CONFIG.get("BASE_URL").rstrip("/")
+    if "http://" in BASE_URL or "https://" in BASE_URL:
+        BASE_URL = BASE_URL.split("://")[-1]
     course_id_str = str(course_id)
     safe_course_id_str = course_id_str.replace(":", "_").replace("+", "_")
     
