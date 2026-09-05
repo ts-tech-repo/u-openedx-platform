@@ -27,6 +27,7 @@ class LearnerSurveyAdmin(admin.ModelAdmin):
         "user",
         "created_at",
         "updated_at",
+        "survey_uuid",
     )
     date_hierarchy = "created_at"
     ordering = ("-created_at",)

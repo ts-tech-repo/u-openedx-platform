@@ -55,7 +55,7 @@ CERTIFICTAE_CONFIG = configuration_helpers.get_value(
     "CERTIFICATE_CONFIG",
     getattr(settings, "CERTIFICATE_CONFIG", {}),
 )
-
+logger.info("CERTIFICATE_CONFIG: %s", CERTIFICTAE_CONFIG)
 CERTIFICATE_SURVEY_ID = CERTIFICTAE_CONFIG.get("survey_id", "course-completion-survey")
 
 CERTIFICATE_WIZARD_TEMPLATE = CERTIFICTAE_CONFIG.get("certificate_wizard_template", "cmu_certificate_wizard.html")
