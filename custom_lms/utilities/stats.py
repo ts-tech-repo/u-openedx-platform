@@ -1,3 +1,4 @@
+import logging
 
 from datetime import timedelta, timezone
 
@@ -6,21 +7,50 @@ from django.conf import settings
 from common.djangoapps.student.models.course_enrollment import CourseEnrollment
 from custom_lms.views.eligibility import is_eligible_for_certificate, get_course_progress_percent
 
+log = logging.getLogger(__name__)
+
 LAST_LOGIN_ACTIVE_THRESHOLD_HOURS = getattr(settings, "LAST_LOGIN_ACTIVE_THRESHOLD_HOURS", 168) # 24 * 7 = 168 hours = 1 week
 
 def _get_checkpoints_completed(user, course_key):
     """
-    Returns the number of checkpoints completed by the user in the given course.
+    Returns the number of checkpoints completed by the user
+    in the given course.
     """
     completed = 0
     total = 0
+
     _, eligibility = is_eligible_for_certificate(user, course_key)
-    if eligibility is None:
+
+    log.info(
+        "Eligibility for user %s in course %s: %s",
+        user.username,
+        course_key,
+        eligibility,
+    )
+
+    # Check None BEFORE calling .get()
+    if not eligibility:
         return 0, 0
-    for checkpoint in eligibility.graded_subsections:
+
+    graded_subsections = eligibility.get("graded_subsections", [])
+
+    if not graded_subsections:
+        return 0, 0
+
+    for checkpoint in graded_subsections:
+        log.info(
+            "Checkpoint %s for user %s in course %s: passed=%s",
+            checkpoint.get("display_name"),
+            user.username,
+            course_key,
+            checkpoint.get("passed", False),
+        )
+
         total += 1
-        if checkpoint.is_passed:
+
+        if checkpoint.get("passed", False):
             completed += 1
+
     return total, completed
 
 def is_active_user(user_profile_last_login):

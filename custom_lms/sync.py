@@ -3,7 +3,7 @@ import logging
 import time
 from django.utils import timezone
 from custom_lms.utilities.stats import _get_checkpoints_completed, get_course_progress_percent, is_active_user
-from student.models import CourseEnrollment
+from common.djangoapps.student.models import CourseEnrollment
 from custom_lms.models import AvLearners, AvSummary, AvSyncHistory
 
 
@@ -54,7 +54,6 @@ def _sync_course(course_key, history):
         CourseEnrollment.objects.filter(course_id=course_key, is_active=True)
         .select_related('user', 'user__profile')
     )
-    now = timezone.now()
     total_learners = 0
     completed_count = 0
     active_count = 0
@@ -80,8 +79,6 @@ def _sync_course(course_key, history):
                 checkpoints_total=expected_checkpoints,
                 last_login=user.last_login,
                 program_status=status,
-                last_synced_at=now,
-                sync_history=history,
             ),
         )
         seen_user_ids.append(user.id)
@@ -98,16 +95,17 @@ def _sync_course(course_key, history):
         user_id__in=seen_user_ids
     ).delete()
 
+    in_progress_count = total_learners - completed_count
     AvSummary.objects.update_or_create(
         course_id=course_key,
         defaults=dict(
-            total_learners=total_learners,
+            enrolled_count=total_learners,
+            completed_count=completed_count,
+            in_progress_count=in_progress_count,
             completion_rate=round((completed_count / total_learners) * 100, 1) if total_learners else 0,
-            active_users=active_count,
-            avg_kc_completed=round(kc_sum / total_learners, 2) if total_learners else 0,
-            kc_total=expected_checkpoints,
-            last_synced_at=now,
-            sync_history=history,
+            active_learners_count=active_count,
+            av_checkpoints_completed=round(kc_sum / total_learners, 2) if total_learners else 0,
+            checkpoints_total=expected_checkpoints,
         ),
     )
     return total_learners
