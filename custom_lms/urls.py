@@ -8,7 +8,8 @@ Mount in your project urls.py, e.g.:
 
 from django.urls import path
 
-from custom_lms.api import learner_survey 
+from custom_lms.api import learner_survey
+from custom_lms.views.admin_view import DashboardStatsView, LearnerListView 
 
 app_name = "custom_lms"
 
@@ -17,4 +18,6 @@ urlpatterns = [
     path("certificate/generate/", learner_survey.certificate_generation_view, name="certificate-generate"),
     path("certificate/download/", learner_survey.certificate_download, name="certificate-download"),
     path("survey/submit/", learner_survey.submit_survey, name="survey-submit"),
+    path('api/v1/stats/', DashboardStatsView.as_view(), name='cmu_dashboard_stats'),
+    path('api/v1/learners/', LearnerListView.as_view(), name='cmu_dashboard_learners'),
 ]
