@@ -295,7 +295,7 @@ def certificate_status(request):
     CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
     SURVEY_PROGRAM_NAME = CERTIFICATE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
     
-    if not user.is_staff and not eligible:
+    if not eligible:
         return JsonResponse({
             "eligible": False,
             "eligibility": eligibility_details,
