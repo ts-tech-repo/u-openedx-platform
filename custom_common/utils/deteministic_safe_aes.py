@@ -1,10 +1,13 @@
 import base64
 import hashlib
+import logging
 
 from django.conf import settings
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
-
+from openedx.core.djangoapps.site_configuration import (
+    helpers as configuration_helpers,
+)
 
 DEFAULT_AES_KEY = None
 
@@ -12,11 +15,10 @@ def _get_secret_key(secret_key=None):
     """
     Return AES key bytes.
     """
-    AES_SECRET_KEY = getattr(
-    settings,
-    "AES_SECRET_KEY",
-    DEFAULT_AES_KEY,
-)
+    
+    site_org = configuration_helpers.get_value("course_org_filter", settings.LMS_BASE)
+    AES_SECRET_KEY = hashlib.sha256(site_org.encode()).hexdigest()
+    logging.info("AES_SECRET_KEY: %s", AES_SECRET_KEY)
 
     if not AES_SECRET_KEY:
         raise ValueError("AES_SECRET_KEY is not configured in settings")
