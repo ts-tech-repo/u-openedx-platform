@@ -8,20 +8,18 @@ from Crypto.Util.Padding import pad, unpad
 
 DEFAULT_AES_KEY = None
 
-AES_SECRET_KEY = getattr(
+def _get_secret_key(secret_key=None):
+    """
+    Return AES key bytes.
+    """
+    AES_SECRET_KEY = getattr(
     settings,
     "AES_SECRET_KEY",
     DEFAULT_AES_KEY,
 )
 
-if not AES_SECRET_KEY:
-    raise ValueError("AES_SECRET_KEY is not configured")
-
-
-def _get_secret_key(secret_key=None):
-    """
-    Return AES key bytes.
-    """
+    if not AES_SECRET_KEY:
+        raise ValueError("AES_SECRET_KEY is not configured in settings")
     key = secret_key or AES_SECRET_KEY
 
     return bytes.fromhex(key)
