@@ -31,8 +31,8 @@ class AvLearnersSerializer(serializers.ModelSerializer):
             "name",
             "enrolled_on",
             "course_progress",
-            "kc_completed",
-            "kc_total",
+            "checkpoints_completed",
+            "checkpoints_total",
             "last_login",
             "program_status",
         ]
@@ -56,9 +56,9 @@ class AvSummarySerializer(serializers.ModelSerializer):
             "completed_count",
             "completion_rate",
             "active_learners_count",
-            "av_kc_completed",
-            "completed_kc_total",
-            "kc_total",
+            "av_checkpoints_completed",
+            "completed_checkpoints_total",
+            "checkpoints_total",
         ]
         read_only_fields = fields
 

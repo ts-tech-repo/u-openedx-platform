@@ -17,8 +17,8 @@ class AvLearnersAdmin(admin.ModelAdmin):
         "course_id",
         "program_status",
         "course_progress_display",
-        "kc_completed",
-        "kc_total",
+        "checkpoints_completed",
+        "checkpoints_total",
         "enrolled_on",
         "last_login",
     )
@@ -46,9 +46,7 @@ class AvLearnersAdmin(admin.ModelAdmin):
     def course_progress_display(self, obj):
         pct = obj.course_progress
         colour = "green" if pct >= 100 else ("orange" if pct >= 50 else "red")
-        return format_html(
-            '<span style="color:{}">{:.1f} %</span>', colour, pct
-        )
+        return format_html('<span style="color:{}">{:.1f} %</span>', colour, pct)
 
 
 # --------------------------------------------------------------------------- #
@@ -66,9 +64,9 @@ class AvSummaryAdmin(admin.ModelAdmin):
         "completed_count",
         "completion_rate_display",
         "active_learners_count",
-        "av_kc_completed",
-        "completed_kc_total",
-        "kc_total",
+        "av_checkpoints_completed",
+        "completed_checkpoints_total",
+        "checkpoints_total",
     )
     search_fields = ("course_id",)
     readonly_fields = ("course_id",)
