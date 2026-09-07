@@ -2,7 +2,7 @@
 import logging
 import time
 from django.utils import timezone
-from custom_lms.utilities.stats import KC_TOTAL_EXPECTED, get_course_progress_percent, get_checkpoints_completed, is_active_user
+from custom_lms.utilities.stats import _get_checkpoints_completed, get_course_progress_percent, is_active_user
 from student.models import CourseEnrollment
 from custom_lms.models import AvLearners, AvSummary, AvSyncHistory
 
@@ -63,10 +63,10 @@ def _sync_course(course_key, history):
     seen_user_ids = []
     for enrollment in enrollments:
         user = enrollment.user
-        kc = get_checkpoints_completed(user, course_key)
+        expected_checkpoints, completed_checkpoints = _get_checkpoints_completed(user, course_key)
         progress = get_course_progress_percent(user, course_key)
         status = (
-            AvLearners.STATUS_COMPLETED if kc >= KC_TOTAL_EXPECTED
+            AvLearners.STATUS_COMPLETED if completed_checkpoints >= expected_checkpoints
             else AvLearners.STATUS_IN_PROGRESS
         )
 
@@ -76,8 +76,8 @@ def _sync_course(course_key, history):
                 name=user.profile.name if hasattr(user, 'profile') else f"{user.first_name} {user.last_name}".strip() or user.username,
                 enrolled_on=enrollment.created,
                 course_progress=progress,
-                checkpoints_completed=kc,
-                checkpoints_total=KC_TOTAL_EXPECTED,
+                checkpoints_completed=completed_checkpoints,
+                checkpoints_total=expected_checkpoints,
                 last_login=user.last_login,
                 program_status=status,
                 last_synced_at=now,
@@ -87,8 +87,8 @@ def _sync_course(course_key, history):
         seen_user_ids.append(user.id)
 
         total_learners += 1
-        kc_sum += kc
-        if kc >= KC_TOTAL_EXPECTED:
+        kc_sum += completed_checkpoints
+        if completed_checkpoints >= expected_checkpoints:
             completed_count += 1
         if is_active_user(user.last_login):
             active_count += 1
@@ -105,7 +105,7 @@ def _sync_course(course_key, history):
             completion_rate=round((completed_count / total_learners) * 100, 1) if total_learners else 0,
             active_users=active_count,
             avg_kc_completed=round(kc_sum / total_learners, 2) if total_learners else 0,
-            kc_total=KC_TOTAL_EXPECTED,
+            kc_total=expected_checkpoints,
             last_synced_at=now,
             sync_history=history,
         ),
