@@ -6,7 +6,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 
-DEFAULT_AES_KEY = "234a8193fae8d79f1ae03c2586f929b66c034a0f3428d95201105922fadb1568"
+DEFAULT_AES_KEY = None
 
 AES_SECRET_KEY = getattr(
     settings,
