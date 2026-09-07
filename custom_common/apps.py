@@ -7,3 +7,8 @@ class CustomCommonConfig(AppConfig):
 
     def ready(self):
         import custom_common.signals
+        from custom_common.custom_course_settings.course_fields import (
+            register_enable_certificate_field,
+        )
+
+        register_enable_certificate_field()

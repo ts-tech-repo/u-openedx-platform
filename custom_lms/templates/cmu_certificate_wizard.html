@@ -1,0 +1,1246 @@
+<%!
+    import json
+%>
+
+<%page args="
+    course_id='',
+    survey_id='',
+    learner_name='',
+    program_name='Agentic AI Program: Building Autonomous Systems for Real-World Applications',
+    certificate_date='',
+    support_email='aiinfinity.support@talentsprint.com',
+    status_url='/extras/certificate/status/',
+    submit_url='/extras/survey/submit/',
+    download_url='/extras/certificate/download/',
+" />
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Generation</title>
+
+    <style>
+        :root {
+            --background: 217 30% 97%;
+            --foreground: 217 50% 15%;
+            --card: 0 0% 100%;
+            --card-foreground: 217 50% 15%;
+            --primary: 217 68% 25%;
+            --primary-foreground: 0 0% 100%;
+            --muted: 217 25% 92%;
+            --muted-foreground: 217 20% 45%;
+            --accent: 217 68% 25%;
+            --accent-foreground: 0 0% 100%;
+            --destructive: 0 84% 60%;
+            --border: 217 25% 85%;
+            --input: 217 25% 85%;
+            --radius: .75rem;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 48rem;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.875rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+
+        /* Stepper */
+        .stepper {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+        .step-wrapper {
+            display: flex;
+            align-items: flex-start;
+        }
+        .step-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .step-circle {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid hsl(var(--border));
+            background: hsl(var(--card));
+            color: hsl(var(--muted-foreground));
+            transition: all 0.2s;
+        }
+        .step-circle[data-status="complete"],
+        .step-circle[data-status="current"] {
+            border-color: hsl(var(--primary));
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+        .step-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+        }
+        .step-label[data-status="current"],
+        .step-label[data-status="complete"] {
+            color: hsl(var(--foreground));
+        }
+        .step-line {
+            width: 4rem;
+            height: 2px;
+            background: hsl(var(--border));
+            margin: 1.5rem 1.5rem 0;
+        }
+
+        /* Cards and Panels */
+        .card {
+            background: hsl(var(--card));
+            color: hsl(var(--card-foreground));
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+        .card-header {
+            padding: 1.5rem;
+        }
+        .card-body {
+            padding: 0 1.5rem 1.5rem;
+        }
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid hsl(var(--border));
+            padding: 1rem 1.5rem;
+        }
+
+        /* Typography */
+        .text-muted { color: hsl(var(--muted-foreground)); }
+        .text-primary { color: hsl(var(--primary)); }
+        .text-destructive { color: hsl(var(--destructive)); }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: bold; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .text-base { font-size: 1rem; }
+        .text-lg { font-size: 1.125rem; }
+        .text-xl { font-size: 1.25rem; }
+        .text-2xl { font-size: 1.5rem; }
+        .text-3xl { font-size: 1.875rem; }
+
+        .mt-1 { margin-top: 0.25rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        .mt-10 { margin-top: 2.5rem; }
+        .mt-12 { margin-top: 3rem; }
+
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-10 { gap: 2.5rem; }
+        .flex-wrap { flex-wrap: wrap; }
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+
+        /* Form Elements */
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid hsl(var(--input));
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background: hsl(var(--muted) / 0.5);
+            color: hsl(var(--foreground));
+        }
+        input[readonly] { cursor: not-allowed; opacity: 0.7; }
+        textarea { min-height: 80px; resize: vertical; }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem;
+            border: 1px solid hsl(var(--border));
+            border-radius: var(--radius);
+            background: hsl(var(--card));
+            margin-top: 1.5rem;
+        }
+        .checkbox-btn {
+            width: 1rem;
+            height: 1rem;
+            flex-shrink: 0;
+            border: 1px solid hsl(var(--primary));
+            border-radius: 0.5rem;
+            margin-top: 0.25rem;
+            cursor: pointer;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .checkbox-btn[data-state="checked"] {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+        .checkbox-btn[data-state="checked"]::after {
+            content: "✓";
+            color: white;
+            font-size: 12px;
+        }
+
+        /* Pills (Survey Options) */
+        .pill-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .pill-option {
+            padding: 0.5rem 1rem;
+            border: 1px solid hsl(var(--border));
+            border-radius: 9999px;
+            background: hsl(var(--card));
+            color: hsl(var(--foreground));
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pill-option:hover {
+            border-color: hsl(var(--primary) / 0.5);
+        }
+        .pill-option[data-selected="true"] {
+            border-color: hsl(var(--primary));
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .question-comment {
+            margin-top: 0.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            text-decoration: none;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .btn-primary {
+            background: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+        .btn-primary:hover {
+            background: hsl(var(--primary) / 0.9);
+        }
+        .btn-secondary {
+            background: hsl(var(--background));
+            color: hsl(var(--foreground));
+            border-color: hsl(var(--input));
+        }
+        .btn-secondary:hover {
+            background: hsl(var(--accent));
+            color: hsl(var(--accent-foreground));
+        }
+
+        .btn svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Certificate specific */
+        .cert-container {
+            background: hsl(35, 20%, 88%);
+            padding: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            border-radius: var(--radius);
+        }
+        .cert-paper {
+            background: white;
+            padding: 3rem 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cert-header { text-align: left; }
+        .cert-name {
+            font-size: 1.875rem;
+            color: hsl(345, 75%, 45%);
+            margin: 1rem 0;
+        }
+        .cert-program {
+            font-size: 1.5rem;
+            color: hsl(0, 60%, 45%);
+            max-width: 36rem;
+            margin: 0 auto;
+            line-height: 1.3;
+        }
+        .cert-signatures {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+            margin-top: 3rem;
+            text-align: left;
+        }
+        @media (min-width: 640px) {
+            .cert-signatures { grid-template-columns: 1fr 1fr; }
+        }
+        .sig-line {
+            border-top: 1px solid rgba(0,0,0,0.4);
+            margin-top: 0.25rem;
+            width: 100%;
+        }
+        .sig-name {
+            height: 80px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        
+        /* Image Styling - Prevents images from blowing up the layout */
+        .sig-name img {
+            max-height: 70px;
+            width: auto;
+            max-width: 200px;
+            object-fit: contain;
+        }
+        .sig-title { font-size: 0.75rem; color: hsl(0, 50%, 45%); margin-top: 0.5rem; text-align: center; }
+
+        /* Steps visibility */
+        .step-panel { display: none; }
+        .step-panel.active { display: block; }
+
+        /* Toast */
+        #cert-toast-container {
+            position: fixed;
+            z-index: 100000;
+            width: min(420px, calc(100vw - 32px));
+            pointer-events: none;
+            right: 16px;
+            bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cert-toast {
+            position: relative;
+            width: 100%;
+            padding: 16px;
+            border: 1px solid hsl(var(--border));
+            background: hsl(var(--card));
+            color: hsl(var(--foreground));
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            pointer-events: auto;
+            animation: certToastIn 0.25s ease forwards;
+        }
+        .cert-toast-title { font-size: 14px; font-weight: 600; flex: 1; }
+        .cert-toast-close {
+            width: 24px; height: 24px; padding: 0; border: 0;
+            background: transparent; cursor: pointer; border-radius: 50%;
+            font-size: 18px; line-height: 24px; color: currentColor;
+        }
+        @keyframes certToastIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Print */
+        @media print {
+            .no-print { display: none !important; }
+            .cert-container { box-shadow: none; background: white; padding: 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="cert-toast-container"></div>
+
+    <div class="container">
+        <h1>Certificate Generation</h1>
+
+        <!-- Stepper -->
+        <div class="stepper">
+            <div class="step-wrapper">
+                <div class="step-content">
+                    <div id="step-circle-1" class="step-circle" data-status="${ 'complete' if initial_step > 1 else 'current' }">
+                        % if initial_step > 1:
+                        <svg id="step-icon-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                        % else:
+                        <svg id="step-icon-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        % endif
+                    </div>
+                    <span id="step-label-1" class="step-label" data-status="${ 'complete' if initial_step > 1 else 'current' }">Verify Details</span>
+                </div>
+                <div class="step-line"></div>
+            </div>
+
+            <div class="step-wrapper">
+                <div class="step-content">
+                    <div id="step-circle-2" class="step-circle" data-status="${ 'complete' if initial_step > 2 else ('current' if initial_step == 2 else 'upcoming') }">
+                        % if initial_step > 2:
+                        <svg id="step-icon-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                        % else:
+                        <svg id="step-icon-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>
+                        % endif
+                    </div>
+                    <span id="step-label-2" class="step-label" data-status="${ 'complete' if initial_step > 2 else ('current' if initial_step == 2 else 'upcoming') }">Survey</span>
+                </div>
+                <div class="step-line"></div>
+            </div>
+
+            <div class="step-wrapper">
+                <div class="step-content">
+                    <div id="step-circle-3" class="step-circle" data-status="${ 'current' if initial_step == 3 else 'upcoming' }">
+                        <svg id="step-icon-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle></svg>
+                    </div>
+                    <span id="step-label-3" class="step-label" data-status="${ 'current' if initial_step == 3 else 'upcoming' }">Certificate</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 1: Verify Details -->
+        <div class="step-panel ${ 'active' if initial_step == 1 else '' }" id="panel-1">
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(var(--primary)); width: 1.25rem; height: 1.25rem;">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <h2 class="text-xl font-semibold">Verify Your Details</h2>
+                    </div>
+                    <p class="mt-1 text-sm text-muted">
+                        Please verify that your name is correct as it will appear on your certificate.
+                    </p>
+                </div>
+
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="fullName">Full Name (as per records)</label>
+                        <input type="text" id="fullName" readonly value="${learner_name}">
+                        <p class="text-xs text-muted mt-1">
+                            For any name correction requests on this certificate, please contact
+                            <a href="mailto:${support_email}" class="text-primary" style="text-decoration: underline;">${support_email}</a>.
+                        </p>
+                    </div>
+
+                    <div class="checkbox-wrapper">
+                        <button type="button" role="checkbox" aria-checked="false" data-state="unchecked" id="confirm" class="checkbox-btn"></button>
+                        <label for="confirm" style="font-weight: normal; cursor: pointer; font-size: 0.875rem;">
+                            I confirm that the name above is correct and I understand it cannot be changed after the certificate is generated.
+                        </label>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="button" id="step1-back" class="btn btn-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 19-7-7 7-7"></path>
+                            <path d="M19 12H5"></path>
+                        </svg>
+                        Back to Dashboard
+                    </button>
+                    <button type="button" id="step1-next" disabled class="btn btn-primary">
+                        Next
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: Survey -->
+        <div class="step-panel ${ 'active' if initial_step == 2 else '' }" id="panel-2">
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(var(--primary)); width: 1.25rem; height: 1.25rem;">
+                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <path d="M12 11h4"></path>
+                            <path d="M12 16h4"></path>
+                            <path d="M8 11h.01"></path>
+                            <path d="M8 16h.01"></path>
+                        </svg>
+                        <h2 class="text-xl font-semibold">Survey</h2>
+                    </div>
+                    <p class="mt-1 text-sm text-muted">
+                        Share your feedback on the program. You may skip this survey if you prefer.
+                    </p>
+                </div>
+
+                <div class="card-body">
+                    <div id="survey-questions">
+                        <div class="form-group" data-question-index="0">
+                            <label>
+                                1. The program helped me develop skills and knowledge needed to understand, evaluate, and apply AI in my organization.
+                                <span class="text-destructive">*</span>
+                            </label>
+                            <div class="pill-group">
+                                <button type="button" data-value="Strongly Agree" class="pill-option">Strongly Agree</button>
+                                <button type="button" data-value="Agree" class="pill-option">Agree</button>
+                                <button type="button" data-value="Neutral" class="pill-option">Neutral</button>
+                                <button type="button" data-value="Disagree" class="pill-option">Disagree</button>
+                                <button type="button" data-value="Strongly Disagree" class="pill-option">Strongly Disagree</button>
+                            </div>
+                            <input type="text" class="question-comment" placeholder="Additional comments on developing skills and knowledge. (optional)" maxlength="300">
+                        </div>
+
+                        <div class="form-group" data-question-index="1">
+                            <label>
+                                2. The action plans and capstone helped me translate program learning into a practical path for AI implementation in my organization.
+                                <span class="text-destructive">*</span>
+                            </label>
+                            <div class="pill-group">
+                                <button type="button" data-value="Strongly Agree" class="pill-option">Strongly Agree</button>
+                                <button type="button" data-value="Agree" class="pill-option">Agree</button>
+                                <button type="button" data-value="Neutral" class="pill-option">Neutral</button>
+                                <button type="button" data-value="Disagree" class="pill-option">Disagree</button>
+                                <button type="button" data-value="Strongly Disagree" class="pill-option">Strongly Disagree</button>
+                            </div>
+                            <input type="text" class="question-comment" placeholder="Additional comments on the action plans and capstone. (optional)" maxlength="300">
+                        </div>
+
+                        <div class="form-group" data-question-index="2">
+                            <label>
+                                3. I would recommend the program to a colleague or friend.
+                                <span class="text-destructive">*</span>
+                            </label>
+                            <div class="pill-group">
+                                <button type="button" data-value="Strongly Agree" class="pill-option">Strongly Agree</button>
+                                <button type="button" data-value="Agree" class="pill-option">Agree</button>
+                                <button type="button" data-value="Neutral" class="pill-option">Neutral</button>
+                                <button type="button" data-value="Disagree" class="pill-option">Disagree</button>
+                                <button type="button" data-value="Strongly Disagree" class="pill-option">Strongly Disagree</button>
+                            </div>
+                            <input type="text" class="question-comment" placeholder="Additional comments on recommending the program. (optional)" maxlength="300">
+                        </div>
+
+                        <div class="form-group" data-question-index="3">
+                            <label>
+                                4. Considering the time and money invested, this program was a good value.
+                                <span class="text-destructive">*</span>
+                            </label>
+                            <div class="pill-group">
+                                <button type="button" data-value="Strongly Agree" class="pill-option">Strongly Agree</button>
+                                <button type="button" data-value="Agree" class="pill-option">Agree</button>
+                                <button type="button" data-value="Neutral" class="pill-option">Neutral</button>
+                                <button type="button" data-value="Disagree" class="pill-option">Disagree</button>
+                                <button type="button" data-value="Strongly Disagree" class="pill-option">Strongly Disagree</button>
+                            </div>
+                            <input type="text" class="question-comment" placeholder="Additional comments on the program's value. (optional)" maxlength="300">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="enhance">5. Is there anything that would enhance your experience in the program?</label>
+                            <textarea id="enhance" placeholder="Share your suggestions... (optional)" rows="4" maxlength="1000"></textarea>
+                        </div>
+
+                        <div class="flex justify-center mt-8">
+                            <button type="button" id="survey-submit" class="btn btn-primary">Submit</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer" style="flex-direction: row-reverse;">
+                    <button type="button" id="survey-skip" class="btn btn-primary">
+                        Skip
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Certificate -->
+        <div class="step-panel ${ 'active' if initial_step == 3 else '' } aman-debug" id="panel-3">
+            <div class="mt-8">
+                <div class="card" style="margin-top: 0; padding: 1rem;">
+                    <div class="flex items-center gap-3 p-5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: hsl(var(--primary)); width: 1.5rem; height: 1.5rem;">
+                            <path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path>
+                            <circle cx="12" cy="8" r="6"></circle>
+                        </svg>
+                        <div>
+                            <h2 class="text-lg font-bold">Your certificate is ready!</h2>
+                            <p class="text-sm text-muted">Your program completion certificate has been generated below.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cert-container mt-6">
+                    <div class="cert-paper">
+                        <div class="cert-header">
+                            <p style="font-size: 1.5rem; font-weight: bold; color: hsl(345, 75%, 38%);">Carnegie Mellon University</p>
+                            <p class="text-2xl">School of Computer Science</p>
+                            <p class="text-lg text-muted">Executive &amp; Professional Education</p>
+                        </div>
+                        <div class="mt-10">
+                            <p class="text-muted">This document confirms that</p>
+                            <p class="cert-name" id="cert-recipient">${learner_name}</p>
+                            <p class="text-muted">has successfully completed the program</p>
+                            <p class="cert-program">${program_name}</p>
+                            <p class="text-muted mt-4" id="cert-date">${certificate_date}</p>
+                        </div>
+                        <div class="cert-signatures">
+                            <div>
+                                <p class="sig-name">
+                                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Ram C. Konduru">
+                                </p>
+                                <div class="sig-line"></div>
+                                <p class="sig-title">Ram Konduru Director of Executive Education</p>
+                            </div>
+                            <div>
+                                <p class="sig-name">
+                                    <!-- TODO: Replace with actual Amir Barati signature image URL -->
+                                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Amir Barati Farimani">
+                                </p>
+                                <div class="sig-line"></div>
+                                <p class="sig-title">
+                                    Amir Barati Farimani<br>
+                                    Russell V. Trader Associate Professor, Mechanical Engineering<br>
+                                    Courtesy Appointments: Biomedical Engineering, Chemical Engineering, Machine Learning
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 no-print mt-6">
+                    <button type="button" id="download-certificate" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" x2="12" y1="15" y2="3"></line>
+                        </svg>
+                        Download Certificate
+                    </button>
+                    <button type="button" id="step3-back" class="btn btn-secondary">
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function () {
+
+    const COURSE_ID = ${json.dumps(course_id) | n};
+    const SURVEY_ID = ${json.dumps(survey_id) | n};
+    const STATUS_URL = ${json.dumps(status_url) | n};
+    const SUBMIT_URL = ${json.dumps(submit_url) | n};
+    const DOWNLOAD_URL = ${json.dumps(download_url) | n};
+    const DASHBOARD_URL = window.parent.location.href;
+
+    const RATING_QUESTION_COUNT = 4;
+    const IS_EMBEDDED = window.self !== window.top;
+
+    const toastContainer = document.getElementById("cert-toast-container");
+    const panels = {
+        1: document.getElementById("panel-1"),
+        2: document.getElementById("panel-2"),
+        3: document.getElementById("panel-3")
+    };
+
+    function getCookie(name) {
+        const cookies = document.cookie ? document.cookie.split("; ") : [];
+        for (let i = 0; i < cookies.length; i++) {
+            const parts = cookies[i].split("=");
+            if (decodeURIComponent(parts[0]) === name) {
+                return decodeURIComponent(parts.slice(1).join("="));
+            }
+        }
+        return null;
+    }
+
+    function authHeaders() {
+        const csrfToken = getCookie("csrftoken") || getCookie("csrf_token");
+        const headers = { "Content-Type": "application/json", "Accept": "application/json" };
+        if (csrfToken) {
+            headers["X-CSRFToken"] = csrfToken;
+        }
+        return headers;
+    }
+
+    function showToast(type, title) {
+        const toast = document.createElement("div");
+        toast.className = "cert-toast " + type;
+        toast.innerHTML = `
+            <div style="flex:1; min-width:0;">
+                <div class="cert-toast-title"></div>
+            </div>
+            <button type="button" class="cert-toast-close" aria-label="Close">×</button>
+        `;
+        toast.querySelector(".cert-toast-title").textContent = title;
+        toastContainer.appendChild(toast);
+
+        function removeToast() {
+            toast.style.transition = "transform 0.2s ease, opacity 0.2s ease";
+            toast.style.transform = "translateX(120%)";
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 200);
+        }
+
+        toast.querySelector(".cert-toast-close").addEventListener("click", removeToast);
+        setTimeout(removeToast, 5000);
+    }
+
+    function goToStep(step, statuses) {
+        Object.keys(panels).forEach((key) => {
+            panels[key].classList.toggle("active", Number(key) === step);
+        });
+
+        statuses.forEach((status, index) => {
+            const stepNum = index + 1;
+            const circle = document.getElementById("step-circle-" + stepNum);
+            const label = document.getElementById("step-label-" + stepNum);
+            const icon = document.getElementById("step-icon-" + stepNum);
+
+            circle.dataset.status = status;
+            label.dataset.status = status;
+
+            if (stepNum !== 3) {
+                icon.innerHTML = status === "complete"
+                    ? '<path d="M20 6 9 17l-5-5"></path>'
+                    : (stepNum === 1
+                        ? '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>'
+                        : '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path>');
+            }
+        });
+    }
+
+    function goToStep1() { goToStep(1, ["current", "upcoming", "upcoming"]); }
+    function goToStep2() { goToStep(2, ["complete", "current", "upcoming"]); }
+    function goToStep3() { goToStep(3, ["complete", "complete", "current"]); }
+
+    function exitFlow() {
+        if (IS_EMBEDDED) {
+            window.parent.postMessage({ type: "certificate-flow:close" }, "*");
+        } else {
+            window.location.href = DASHBOARD_URL;
+        }
+    }
+
+    /* ---------- Step 1: Verify Details ---------- */
+
+    const confirmCheckbox = document.getElementById("confirm");
+    const step1Next = document.getElementById("step1-next");
+
+    confirmCheckbox.addEventListener("click", function () {
+        const checked = confirmCheckbox.dataset.state === "checked";
+
+        confirmCheckbox.dataset.state = checked
+            ? "unchecked"
+            : "checked";
+
+        confirmCheckbox.setAttribute(
+            "aria-checked",
+            String(!checked)
+        );
+
+        step1Next.disabled =
+            confirmCheckbox.dataset.state !== "checked";
+    });
+
+    document
+        .getElementById("step1-back")
+        .addEventListener("click", exitFlow);
+
+
+    /*
+    * Persist name validation before moving to Step 2.
+    */
+    async function validateName() {
+        if (confirmCheckbox.dataset.state !== "checked") {
+            showToast(
+                "error",
+                "Please confirm that your name is correct."
+            );
+            return;
+        }
+
+        const button = step1Next;
+
+        button.disabled = true;
+
+        const payload = {
+            course_id: COURSE_ID,
+            survey_id: SURVEY_ID,
+            action: "name-validate",
+            metadata: {
+                name: document
+                    .getElementById("fullName")
+                    .value
+                    .trim()
+            }
+        };
+
+        try {
+            const response = await fetch(SUBMIT_URL, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: authHeaders(),
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok) {
+                showToast(
+                    "error",
+                    (data && data.error) ||
+                    "Unable to validate your name. Please try again."
+                );
+                return;
+            }
+
+            goToStep2();
+
+        } catch (error) {
+            showToast(
+                "error",
+                "Network error. Please try again."
+            );
+        } finally {
+            button.disabled =
+                confirmCheckbox.dataset.state !== "checked";
+        }
+    }
+
+    step1Next.addEventListener(
+        "click",
+        validateName
+    );
+
+
+    /* ---------- Step 2: Survey ---------- */
+
+    document
+        .querySelectorAll(".pill-group")
+        .forEach((group) => {
+
+            group
+                .querySelectorAll(".pill-option")
+                .forEach((btn) => {
+
+                    btn.addEventListener("click", function () {
+
+                        group
+                            .querySelectorAll(".pill-option")
+                            .forEach((b) => {
+                                b.dataset.selected = "false";
+                            });
+
+                        btn.dataset.selected = "true";
+                    });
+                });
+        });
+
+
+    function collectAnswers() {
+
+        const answers = [];
+        let complete = true;
+
+        for (
+            let i = 0;
+            i < RATING_QUESTION_COUNT;
+            i++
+        ) {
+
+            const questionBlock =
+                document.querySelector(
+                    '[data-question-index="' + i + '"]'
+                );
+
+            const questionText =
+                questionBlock
+                    .querySelector("label")
+                    .textContent
+                    .trim()
+                    .replace(/\s+/g, " ")
+                    .replace(" *", "");
+
+            const selectedBtn =
+                questionBlock.querySelector(
+                    '.pill-option[data-selected="true"]'
+                );
+
+            const comment =
+                questionBlock
+                    .querySelector(".question-comment")
+                    .value
+                    .trim();
+
+            if (!selectedBtn) {
+                complete = false;
+            }
+
+            answers.push({
+                question: questionText,
+                answer: selectedBtn
+                    ? selectedBtn.dataset.value
+                    : null,
+                comment: comment
+            });
+        }
+
+        answers.push({
+            question: document
+                .querySelector('label[for="enhance"]')
+                .textContent
+                .trim(),
+
+            answer: document
+                .getElementById("enhance")
+                .value
+                .trim(),
+
+            comment: ""
+        });
+
+        return {
+            complete,
+            answers
+        };
+    }
+
+
+    /*
+    * Submit survey or skip survey.
+    *
+    * Backend will:
+    *
+    *     survey-submit / survey-skip
+    *              ↓
+    *          certificate
+    */
+    async function submitSurvey(skipped) {
+
+        let payload;
+
+        if (skipped) {
+
+            payload = {
+                course_id: COURSE_ID,
+                survey_id: SURVEY_ID,
+                action: "survey-skip",
+                metadata: {}
+            };
+
+        } else {
+
+            const collected = collectAnswers();
+
+            if (!collected.complete) {
+
+                showToast(
+                    "error",
+                    "Please answer all required questions before submitting."
+                );
+
+                return;
+            }
+
+            payload = {
+                course_id: COURSE_ID,
+                survey_id: SURVEY_ID,
+                action: "survey-submit",
+                metadata: {
+                    answers: collected.answers
+                }
+            };
+        }
+
+        const activeButton = skipped
+            ? document.getElementById("survey-skip")
+            : document.getElementById("survey-submit");
+
+        activeButton.disabled = true;
+
+        try {
+
+            const response = await fetch(
+                SUBMIT_URL,
+                {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: authHeaders(),
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            const data =
+                await response
+                    .json()
+                    .catch(() => null);
+
+            if (!response.ok) {
+
+                showToast(
+                    "error",
+                    (data && data.error) ||
+                    "Unable to submit. Please try again."
+                );
+
+                return;
+            }
+
+            /*
+            * Backend has already:
+            *
+            *     1. saved survey action
+            *     2. generated certificate
+            *     3. changed action to certificate
+            *
+            * Therefore directly move to Step 3.
+            */
+            if (data.completed || data.survey_skipped || data.survey_submitted) {
+                goToStep3();
+                return;
+            }
+
+            showToast(
+                "error",
+                "Certificate generation was not completed."
+            );
+
+        } catch (error) {
+
+            showToast(
+                "error",
+                "Network error. Please try again."
+            );
+
+        } finally {
+
+            activeButton.disabled = false;
+        }
+    }
+
+
+    document
+        .getElementById("survey-submit")
+        .addEventListener(
+            "click",
+            () => submitSurvey(false)
+        );
+
+    document
+        .getElementById("survey-skip")
+        .addEventListener(
+            "click",
+            () => submitSurvey(true)
+        );
+
+    /* ---------- Step 3: Certificate ---------- */
+
+    document
+        .getElementById("step3-back")
+        .addEventListener(
+            "click",
+            exitFlow
+        );
+
+
+    document
+        .getElementById("download-certificate")
+        .addEventListener(
+            "click",
+            async function () {
+
+                const button = this;
+
+                try {
+
+                    button.disabled = true;
+
+                    const params =
+                        new URLSearchParams({
+                            course_id: COURSE_ID
+                        });
+
+                    const response =
+                        await fetch(
+                            DOWNLOAD_URL +
+                            "?" +
+                            params.toString(),
+                            {
+                                method: "GET",
+                                credentials: "same-origin",
+                                headers: {
+                                    "Accept": "text/html"
+                                }
+                            }
+                        );
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Certificate download failed: " +
+                            response.status
+                        );
+                    }
+
+                    const contentDisposition = response.headers.get("Content-Disposition");
+
+                    let filename = "certificate.pdf";
+
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+                        if (match) {
+                            filename = match[1];
+                        }
+                    }
+
+
+                    const blob =
+                        await response.blob();
+
+                    const url =
+                        window.URL.createObjectURL(blob);
+
+                    const link =
+                        document.createElement("a");
+
+                    link.href = url;
+                    link.download = filename;
+
+                    document.body.appendChild(link);
+
+                    link.click();
+
+                    link.remove();
+
+                    window.URL.revokeObjectURL(url);
+
+                } catch (error) {
+
+                    showToast(
+                        "error",
+                        "Unable to download the certificate. Please try again."
+                    );
+
+                } finally {
+
+                    button.disabled = false;
+                }
+            }
+        );
+
+
+    /* ---------- Initial status check ---------- */
+
+    async function init() {
+
+        if (!COURSE_ID) {
+            return;
+        }
+
+        try {
+
+            const params =
+                new URLSearchParams({
+                    course_id: COURSE_ID
+                });
+
+            const response =
+                await fetch(
+                    STATUS_URL +
+                    "?" +
+                    params.toString(),
+                    {
+                        method: "GET",
+                        credentials: "same-origin",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    }
+                );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data =
+                await response.json();
+
+            if (data.completed || data.survey_skipped || data.survey_submitted) {
+
+                goToStep3();
+
+                return;
+            }
+
+            if (data.name_validated) {
+
+                goToStep2();
+
+                return;
+            }
+
+            goToStep1();
+
+        } catch (error) {
+
+            goToStep1();
+        }
+    }
+
+})();
+</script>
+
+</body>
+</html>

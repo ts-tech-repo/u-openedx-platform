@@ -19,7 +19,7 @@ from edx_rest_framework_extensions.permissions import NotJwtRestrictedApplicatio
 
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 
-from custom_common.deteministic_safe_aes import encrypt
+from custom_common.utils.deteministic_safe_aes import encrypt
 from custom_common.helpers import (
     create_user,
     generate_random_password,
