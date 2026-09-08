@@ -2,7 +2,7 @@
 import logging
 import time
 from django.utils import timezone
-from custom_lms.utilities.stats import _get_checkpoints_completed, get_course_progress_percent, is_active_user
+from custom_lms.utils.stats import _get_checkpoints_completed, get_course_progress_percent, is_active_user
 from common.djangoapps.student.models import CourseEnrollment
 from custom_lms.models import AvLearners, AvSummary, AvSyncHistory
 

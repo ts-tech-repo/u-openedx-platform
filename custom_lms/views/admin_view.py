@@ -1,6 +1,6 @@
 # custom_lms/apps/cmu_dashboard/views.py
-from custom_lms.utilities.permissions import IsInstructorOrAdmin
-from custom_lms.utilities.stats import get_dashboard_stats, get_learner_rows
+from custom_lms.utils.permissions import IsInstructorOrAdmin
+from custom_lms.utils.stats import get_dashboard_stats, get_learner_rows
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from opaque_keys.edx.keys import CourseKey
