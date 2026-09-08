@@ -4,6 +4,39 @@ from django.utils.html import format_html
 from ..models.admin_view import AvLearners, AvSummary, AvSyncHistory
 
 
+def _local_time_html(dt):
+    """
+    Return an HTML snippet that renders *dt* in the browser's local timezone
+    using Django's default date/time style, e.g. "Sept. 8, 2026, 5:51 a.m."
+
+    The <time> element carries the UTC ISO-8601 string; the inline script
+    converts it on page load using the browser's Intl API.  Falls back to
+    the raw UTC string when JS is disabled.
+    """
+    if dt is None:
+        return "-"
+    iso = dt.strftime("%Y-%m-%dT%H:%M:%SZ")  # always UTC
+    return format_html(
+        '<time data-utc="{iso}">{iso}</time>'
+        "<script>"
+        "(function(){{"
+        "  var el=document.currentScript.previousSibling;"
+        "  var d=new Date(el.dataset.utc);"
+        # Build "Sept. 8, 2026" part
+        "  var months=['Jan.','Feb.','March','April','May','June','July','Aug.','Sept.','Oct.','Nov.','Dec.'];"
+        "  var datePart=months[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();"
+        # Build "5:51 a.m." / "1:30 p.m." part  (no leading zero on hour)
+        "  var h=d.getHours(),m=d.getMinutes();"
+        "  var ampm=h<12?'a.m.':'p.m.';"
+        "  var h12=h%12||12;"
+        "  var timePart=h12+':'+(m<10?'0':'')+m+'\u00a0'+ampm;"
+        "  el.textContent=datePart+', '+timePart;"
+        "}})();"
+        "</script>",
+        iso=iso,
+    )
+
+
 # --------------------------------------------------------------------------- #
 #  AvLearners                                                                  #
 # --------------------------------------------------------------------------- #
@@ -19,8 +52,8 @@ class AvLearnersAdmin(admin.ModelAdmin):
         "course_progress_display",
         "checkpoints_completed",
         "checkpoints_total",
-        "enrolled_on",
-        "last_login",
+        "enrolled_on_local",
+        "last_login_local",
     )
     list_filter = ("program_status",)
     search_fields = (
@@ -32,8 +65,8 @@ class AvLearnersAdmin(admin.ModelAdmin):
     readonly_fields = (
         "user",
         "course_id",
-        "enrolled_on",
-        "last_login",
+        "enrolled_on_local",
+        "last_login_local",
     )
     ordering = ("-last_login",)
     date_hierarchy = "enrolled_on"
@@ -42,12 +75,28 @@ class AvLearnersAdmin(admin.ModelAdmin):
     def learner(self, obj):
         return f"{obj.user.username} ({obj.user.email})"
 
+    @admin.display(description="Enrolled on", ordering="enrolled_on")
+    def enrolled_on_local(self, obj):
+        return _local_time_html(obj.enrolled_on)
+
+    enrolled_on_local.allow_tags = True  # Django < 2.0 compat
+
+    @admin.display(description="Last login", ordering="last_login")
+    def last_login_local(self, obj):
+        return _local_time_html(obj.last_login)
+
+    last_login_local.allow_tags = True
+
     @admin.display(description="Progress %", ordering="course_progress")
     def course_progress_display(self, obj):
-        pct = obj.course_progress
+        pct = obj.course_progress or 0
         colour = "green" if pct >= 100 else ("orange" if pct >= 50 else "red")
-        return format_html('<span style="color:{}">{:.1f} %</span>', colour, pct)
 
+        return format_html(
+            '<span style="color:{}">{} %</span>',
+            colour,
+            f"{pct}",
+        )
 
 # --------------------------------------------------------------------------- #
 #  AvSummary                                                                   #
@@ -86,8 +135,8 @@ class AvSyncHistoryAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
-        "started_at",
-        "finished_at",
+        "started_at_local",
+        "finished_at_local",
         "status",
         "trigger",
         "courses_processed",
@@ -98,8 +147,8 @@ class AvSyncHistoryAdmin(admin.ModelAdmin):
     list_filter = ("status", "trigger")
     search_fields = ("error_message",)
     readonly_fields = (
-        "started_at",
-        "finished_at",
+        "started_at_local",
+        "finished_at_local",
         "status",
         "trigger",
         "courses_processed",
@@ -110,6 +159,18 @@ class AvSyncHistoryAdmin(admin.ModelAdmin):
     )
     ordering = ("-started_at",)
     date_hierarchy = "started_at"
+
+    @admin.display(description="Started at", ordering="started_at")
+    def started_at_local(self, obj):
+        return _local_time_html(obj.started_at)
+
+    started_at_local.allow_tags = True
+
+    @admin.display(description="Finished at", ordering="finished_at")
+    def finished_at_local(self, obj):
+        return _local_time_html(obj.finished_at)
+
+    finished_at_local.allow_tags = True
 
     def has_add_permission(self, request):
         return False

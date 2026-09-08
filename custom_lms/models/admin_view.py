@@ -20,7 +20,7 @@ class AvLearners(models.Model):
     course_id = CourseKeyField(max_length=255, db_index=True)
     name = models.CharField(max_length=255, blank=True, default='')
     enrolled_on = models.DateTimeField(null=True, blank=True)
-    course_progress = models.FloatField(default=0)        # percentage
+    course_progress = models.PositiveIntegerField(default=0)        # percentage
     checkpoints_completed = models.PositiveIntegerField(default=0)
     checkpoints_total = models.PositiveIntegerField(default=11)
     last_login = models.DateTimeField(null=True, blank=True)
@@ -28,6 +28,8 @@ class AvLearners(models.Model):
 
     class Meta:
         app_label = 'custom_lms'
+        verbose_name = 'AV Learner'
+        verbose_name_plural = 'AV Learners'
         unique_together = [('user', 'course_id')]
         indexes = [
             models.Index(fields=['course_id', 'program_status']),
@@ -48,7 +50,7 @@ class AvSummary(models.Model):
     enrolled_count = models.PositiveIntegerField(default=0)
     in_progress_count = models.PositiveIntegerField(default=0)
     completed_count = models.PositiveIntegerField(default=0)
-    completion_rate = models.FloatField(default=0)  # percentage
+    completion_rate = models.PositiveIntegerField(default=0)  # percentage
     active_learners_count = models.PositiveIntegerField(default=0)
     av_checkpoints_completed = models.PositiveIntegerField(default=0)
     completed_checkpoints_total = models.PositiveIntegerField(default=0)
@@ -56,6 +58,8 @@ class AvSummary(models.Model):
 
     class Meta:
         app_label = 'custom_lms'
+        verbose_name = 'AV Summary'
+        verbose_name_plural = 'AV Summary'
         indexes = [
             models.Index(fields=['course_id']),
         ]
@@ -93,6 +97,8 @@ class AvSyncHistory(models.Model):
 
     class Meta:
         app_label = 'custom_lms'
+        verbose_name = 'AV Sync History'
+        verbose_name_plural = 'AV Sync History'
         ordering = ['-started_at']
 
     def __str__(self):

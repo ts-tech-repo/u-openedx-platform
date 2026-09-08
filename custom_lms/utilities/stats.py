@@ -1,8 +1,9 @@
 import logging
 
-from datetime import timedelta, timezone
+from datetime import timedelta
 
 from django.conf import settings
+from django.utils import timezone
 
 from common.djangoapps.student.models.course_enrollment import CourseEnrollment
 from custom_lms.views.eligibility import is_eligible_for_certificate, get_course_progress_percent

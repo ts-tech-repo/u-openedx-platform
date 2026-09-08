@@ -62,6 +62,14 @@ def _sync_course(course_key, history):
     seen_user_ids = []
     for enrollment in enrollments:
         user = enrollment.user
+        if user.is_staff or user.is_superuser:
+            # Skip staff/superusers, since they are not real learners.
+            log.info(
+                "Skipping staff/superuser %s in course %s",
+                user.username,
+                course_key,
+            )
+            continue
         expected_checkpoints, completed_checkpoints = _get_checkpoints_completed(user, course_key)
         progress = get_course_progress_percent(user, course_key)
         status = (

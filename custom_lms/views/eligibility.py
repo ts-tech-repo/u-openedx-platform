@@ -9,8 +9,10 @@ defined in the course's GRADER policy.
 import logging
 from typing import Tuple, Dict, List, Any
 
+from lms.djangoapps.course_home_api.progress.api import aggregate_assignment_type_grade_summary
+from lms.djangoapps.course_home_api.progress.views import ProgressTabView
 from opaque_keys.edx.keys import CourseKey
-from lms.djangoapps.courseware.courses import get_course_by_id
+from lms.djangoapps.courseware.courses import get_course_blocks_completion_summary, get_course_by_id
 
 log = logging.getLogger(__name__)
 
@@ -141,7 +143,7 @@ def is_eligible_for_certificate(
         grading_policy = getattr(course, "grading_policy", None) or {}
         log.info("Course grading policy for course_id=%s: %s", course_key, grading_policy)
     except Exception:
-        log.exception("Unable to load course for user_id=%s course_id=%s", user.id, course_key)
+        log.exception("Unable to load course for user_id=%s course_id=%s", user.username, course_key)
         return False, {
             "graded_subsections": [],
             "minimum_score": 0.0,
@@ -186,9 +188,9 @@ def is_eligible_for_certificate(
     # 5. Load learner course grade
     try:
         course_grade = CourseGradeFactory().read(user, course_key=course_key)
-        log.info("Loaded course grade for user_id=%s course_id=%s", user.id, course_key)
+        log.info("Loaded course grade for user_id=%s course_id=%s", user.username, course_key)
     except Exception:
-        log.exception("Unable to load course grade for user_id=%s course_id=%s", user.id, course_key)
+        log.exception("Unable to load course grade for user_id=%s course_id=%s", user.username, course_key)
         return False, {
             "graded_subsections": [],
             "minimum_score": float(default_minimum_score),
@@ -293,7 +295,7 @@ def is_eligible_for_certificate(
 
     log.info(
         "Certificate eligibility: user_id=%s course_id=%s eligible=%s graded_subsections=%s",
-        user.id,
+        user.username,
         course_key,
         eligible,
         len(graded_subsections),
@@ -306,75 +308,87 @@ def is_eligible_for_certificate(
     }
 
 
-def get_course_progress_percent(user: Any, course_key: CourseKey) -> float:
+def get_course_progress_percent(
+    user: Any,
+    course_key_str: str | CourseKey,
+) -> float:
     """
     Return the learner's weighted course grade as a percentage (0–100).
-    
-    Supports ``num_droppable`` — lowest-scoring grades are dropped before
+
+    Supports `num_droppable` — lowest-scoring grades are dropped before
     averaging when the policy configures it.
 
-    Returns ``0.0`` on any error.
+    Returns `0` on any error.
     """
     from lms.djangoapps.grades.api import CourseGradeFactory
 
+    log.info(
+        "Starting course progress calculation: user_id=%s username=%s "
+        "course_key_input=%s input_type=%s",
+        getattr(user, "id", None),
+        getattr(user, "username", None),
+        course_key_str,
+        type(course_key_str).__name__,
+    )
+
+    # ------------------------------------------------------------------ #
+    # Normalize CourseKey
+    # ------------------------------------------------------------------ #
     try:
-        course = get_course_by_id(course_key)
-        policies_by_type = _get_grader_policy_by_type(course)
-        if not policies_by_type:
-            return 0.0
+        course_key = _as_course_key(course_key_str)
 
-        course_grade = CourseGradeFactory().read(user, course_key=course_key)
-
-        # Accumulate per-subsection earned/possible by assignment type
-        grades_by_type: Dict[str, List[float]] = {}
-        for subsection_grade in course_grade.subsection_grades.values():
-            if not getattr(subsection_grade, "graded", False):
-                continue
-
-            assignment_type = str(
-                getattr(subsection_grade, "format", "") or ""
-            ).strip().lower()
-            if assignment_type not in policies_by_type:
-                continue
-
-            possible = float(getattr(subsection_grade, "possible_graded", 0) or 0)
-            if possible <= 0:
-                continue
-
-            earned = float(getattr(subsection_grade, "earned_graded", 0) or 0)
-            grades_by_type.setdefault(assignment_type, []).append(earned / possible)
-
-        if not grades_by_type:
-            return 0.0
-
-        # Weighted average across assignment types
-        weighted_sum = 0.0
-        total_weight = 0.0
-        for assignment_type, grades in grades_by_type.items():
-            policy = policies_by_type[assignment_type]
-            weight = float(policy.get("weight") or 0.0)
-            if weight <= 0:
-                continue
-
-            num_droppable = int(policy.get("num_droppable") or 0)
-            if num_droppable > 0 and len(grades) > num_droppable:
-                grades = sorted(grades)[num_droppable:]
-
-            if not grades:
-                continue
-
-            weighted_sum += (sum(grades) / len(grades)) * weight
-            total_weight += weight
-
-        if total_weight <= 0:
-            return 0.0
-
-        return round((weighted_sum / total_weight) * 100, 2)
-
+        log.info(
+            "CourseKey normalized successfully: user_id=%s course_id=%s "
+            "course_key_type=%s",
+            getattr(user, "id", None),
+            course_key,
+            type(course_key).__name__,
+        )
     except Exception:
         log.exception(
-            "Unable to calculate course progress: user_id=%s course_id=%s",
-            user.id,
+            "Failed to normalize CourseKey: user_id=%s username=%s "
+            "course_key_input=%s input_type=%s",
+            getattr(user, "id", None),
+            getattr(user, "username", None),
+            course_key_str,
+            type(course_key_str).__name__,
+        )
+        return 0
+
+    completion_summary = get_course_blocks_completion_summary(course_key, user)
+    log.info(
+        "Completion summary retrieved: user=%s course_id=%s "
+        "completion_summary=%s",
+        getattr(user, "username", None),
+        course_key,
+        completion_summary,
+    )
+    if completion_summary is not None:
+        try:
+            complete_count = completion_summary.get("complete_count", 0)
+            incomplete_count = completion_summary.get("incomplete_count", 0)
+            locked_count = completion_summary.get("locked_count", 0)
+            total_count = complete_count + incomplete_count + locked_count
+            progress_percent = (complete_count / total_count) * 100 if total_count > 0 else 0.0
+            log.info(
+                "Course progress percent calculated: user=%s course_id=%s "
+                "progress_percent=%.2f%%",
+                getattr(user, "username", None),
+                course_key,
+                progress_percent,
+            )
+            return round(progress_percent)
+        except Exception:
+            log.exception(
+                "Failed to calculate course progress percent: user=%s "
+                "course_id=%s",
+                getattr(user, "username", None),
+                course_key,
+            )
+    else:
+        log.warning(
+            "Completion summary is None: user=%s course_id=%s",
+            getattr(user, "username", None),
             course_key,
         )
-        return 0.0
+    return 0
