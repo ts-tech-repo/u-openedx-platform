@@ -117,6 +117,13 @@ def _get_certificate_eligibility(user, course_id):
     cached_result = cache.get(cache_key)
 
     if cached_result is not None:
+        logger.info(
+            "certificate eligibility cache hit | cache_key=%s | user_id=%s | course_id=%s | eligible=%s",
+            cache_key,
+            getattr(user, "id", None),
+            course_id,
+            cached_result[0],
+        )
         return cached_result
 
     start_time = timezone.now()
