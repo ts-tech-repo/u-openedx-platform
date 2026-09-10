@@ -46,6 +46,3 @@ class AdminViewTab(LinkTab):
         
         # Initialize the parent LinkTab
         super().__init__(tab_dict)
-        
-        # Force the link to open in a new tab so they don't lose their LMS context
-        self['target'] = '_blank' 
