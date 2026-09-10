@@ -19,7 +19,6 @@ class CustomLmsConfig(AppConfig):
 
             # Keep a reference to the original core function
             original_get_course_tab_list = courseware_tabs.get_course_tab_list
-            logger.info("Tab List: %s", original_get_course_tab_list)
 
             def patched_get_course_tab_list(user, course):
                 # 1. Get the default tabs from core
@@ -28,7 +27,7 @@ class CustomLmsConfig(AppConfig):
                 # 2. Check if the current user is allowed to see our custom tab
                 if AdminViewTab.is_enabled(course, user):
                     # 3. Instantiate our custom tab
-                    admin_tab = AdminViewTab({'type': 'admin_view'})
+                    admin_tab = AdminViewTab({'type': 'admin_view', 'course_id': str(course.id)})
                     
                     # 4. Find the index of the 'instructor' tab
                     instructor_index = next((i for i, tab in enumerate(tabs) if tab.type == 'instructor'), -1)
