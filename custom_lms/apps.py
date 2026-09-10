@@ -19,6 +19,7 @@ class CustomLmsConfig(AppConfig):
 
             # Keep a reference to the original core function
             original_get_course_tab_list = courseware_tabs.get_course_tab_list
+            logger.info("Tab List: %s", original_get_course_tab_list)
 
             def patched_get_course_tab_list(user, course):
                 # 1. Get the default tabs from core

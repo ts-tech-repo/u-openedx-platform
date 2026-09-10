@@ -103,33 +103,19 @@ certificate_date='',
         page-break-after: avoid !important;
         break-after: avoid !important;
     }
-    .university {
+
+    .header .logo {
         position: relative;
         text-align: left;
-        font-size: 2rem;
-        font-weight: bold;
-        color: hsl(345, 75%, 38%);
         margin: 0;
-        padding: 0;
-        line-height: 1.15;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
     }
-    .school {
-        position: relative;
-        text-align: left;
-        font-size: 2rem;
-        color: #333333;
-        margin: 0;
-        padding: 0;
-        line-height: 1.15;
-    }
-    .education {
-        position: relative;
-        text-align: left;
-        font-size: 1.125rem;
-        color: #777777;
-        margin: 0;
-        padding: 0;
-        line-height: 1.2;
+
+    .header .logo img {
+        max-height: 90px;
+        width: auto;
+        object-fit: contain;
     }
  
     /*
@@ -293,14 +279,8 @@ certificate_date='',
          HEADER
          ======================================================== -->
     <div class="header">
-        <div class="university">
-            Carnegie Mellon University
-        </div>
-        <div class="school">
-            School of Computer Science
-        </div>
-        <div class="education">
-            Executive &amp; Professional Education
+        <div class="logo">
+            <img src="${logo_url}" alt="Carnegie Mellon University">
         </div>
     </div>
  
@@ -310,7 +290,7 @@ certificate_date='',
     <div class="program-section">
         <p class="muted">
             This document confirms that
-        </p>
+        </p>y
         <p class="recipient">
             ${learner_name}
         </p>
@@ -336,7 +316,7 @@ certificate_date='',
         <div class="signature">
             <div class="signature-name">
                 <img
-                    src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png"
+                    src="${signature_url_1}"
                     alt="Ram C. Konduru"
                 >
             </div>
@@ -353,7 +333,7 @@ certificate_date='',
         <div class="signature">
             <div class="signature-name">
                 <img
-                    src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png"
+                    src="${signature_url_2}"
                     alt="Amir Barati Farimani"
                 >
             </div>

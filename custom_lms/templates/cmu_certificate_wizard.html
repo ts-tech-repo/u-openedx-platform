@@ -306,6 +306,19 @@
             overflow: hidden;
         }
         .cert-header { text-align: left; }
+        .cert-header .logo {
+            position: relative;
+            text-align: left;
+            margin: 0;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+        }
+
+        .cert-header .logo img {
+            max-height: 90px;
+            width: auto;
+            object-fit: contain;
+        }
         .cert-name {
             font-size: 1.875rem;
             color: hsl(345, 75%, 45%);
@@ -623,9 +636,9 @@
                 <div class="cert-container mt-6">
                     <div class="cert-paper">
                         <div class="cert-header">
-                            <p style="font-size: 1.5rem; font-weight: bold; color: hsl(345, 75%, 38%);">Carnegie Mellon University</p>
-                            <p class="text-2xl">School of Computer Science</p>
-                            <p class="text-lg text-muted">Executive &amp; Professional Education</p>
+                            <div class="logo">
+                                <img src="${logo_url}" alt="Carnegie Mellon University">
+                            </div>
                         </div>
                         <div class="mt-10">
                             <p class="text-muted">This document confirms that</p>
@@ -637,7 +650,7 @@
                         <div class="cert-signatures">
                             <div>
                                 <p class="sig-name">
-                                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Ram C. Konduru">
+                                    <img src="${signature_url_1}" alt="Ram C. Konduru">
                                 </p>
                                 <div class="sig-line"></div>
                                 <p class="sig-title">Ram Konduru Director of Executive Education</p>
@@ -645,7 +658,7 @@
                             <div>
                                 <p class="sig-name">
                                     <!-- TODO: Replace with actual Amir Barati signature image URL -->
-                                    <img src="https://static.talentsprint.com/ts_drupal/olympiad/home/images/certificate-signature.png" alt="Amir Barati Farimani">
+                                    <img src="${signature_url_2}" alt="Amir Barati Farimani">
                                 </p>
                                 <div class="sig-line"></div>
                                 <p class="sig-title">

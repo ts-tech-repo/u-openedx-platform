@@ -225,6 +225,9 @@ def _get_certificate_context(user, course_id):
     CERTIFICATE_CONFIG = _get_certificate_config()
     CERTIFICATE_SURVEY_ID = CERTIFICATE_CONFIG.get("survey_id", "course-completion-survey")
     SURVEY_PROGRAM_NAME = CERTIFICATE_CONFIG.get("survey_program_name", "Agentic AI Program: Building Autonomous Systems for Real-World Applications")
+    CERTIFICATE_LOGO_URL = CERTIFICATE_CONFIG.get("logo_url", "https://static.talentsprint.com/extras/cmu-certificate-logo.png")
+    CERTIFICATE_SIGNATURE_URL_1 = CERTIFICATE_CONFIG.get("signature_url_1", "")
+    CERTIFICATE_SIGNATURE_URL_2 = CERTIFICATE_CONFIG.get("signature_url_2", "")
 
     SUPPORT_EMAIL = configuration_helpers.get_value(
         "contact_mailing_address",
@@ -238,6 +241,9 @@ def _get_certificate_context(user, course_id):
         "program_name": SURVEY_PROGRAM_NAME,
         "certificate_date": _certificate_date_display(),
         "support_email": SUPPORT_EMAIL,
+        "logo_url": CERTIFICATE_LOGO_URL,
+        "signature_url_1": CERTIFICATE_SIGNATURE_URL_1,
+        "signature_url_2": CERTIFICATE_SIGNATURE_URL_2,
     }
 
 
@@ -322,6 +328,7 @@ def certificate_status(request):
     survey_submitted = (current_action == LearnerSurvey.ACTION_SURVEY_SUBMIT)
     survey_skipped = (current_action == LearnerSurvey.ACTION_SURVEY_SKIP)
     completed = (current_action == LearnerSurvey.ACTION_CERTIFICATE)
+
     
     survey_required = name_validated and not (survey_submitted or survey_skipped) and not completed
 
