@@ -481,7 +481,7 @@ def submit_survey(request):
         action_metadata=certificate_metadata,
     )
 
-    final_action = LearnerSurvey.ACTION_SURVEY_SKIP if action == LearnerSurvey.ACTION_SURVEY_SKIP else LearnerSurvey.ACTION_CERTIFICATE
+    final_action = LearnerSurvey.ACTION_CERTIFICATE
 
     # ---------------------------------------------------------------
     # FINAL DB WRITE (Optimized to avoid redundant SELECT from update_or_create)
