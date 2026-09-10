@@ -40,7 +40,7 @@ class AdminViewTab(LinkTab):
     def __init__(self, tab_dict):
         # Dynamically inject the MFE URL using the base LMS URL
         base_url = getattr(settings, 'LMS_ROOT_URL', '')
-        tab_dict['link'] = f"{base_url}/av-dashboard"
+        tab_dict['link'] = f"{base_url}/course-admin-view/{tab_dict.get('course_id', '')}/"
         tab_dict['name'] = str(self.name)
         tab_dict['type'] = self.type
         
