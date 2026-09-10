@@ -451,7 +451,7 @@ def submit_survey(request):
     # ---------------------------------------------------------------
     # SURVEY SUBMIT / SKIP WORKFLOW VALIDATION
     # ---------------------------------------------------------------
-    if previous_action != LearnerSurvey.ACTION_NAME_VALIDATE and action != previous_action:
+    if action == LearnerSurvey.ACTION_SURVEY_SUBMIT and previous_action not in {LearnerSurvey.ACTION_NAME_VALIDATE, LearnerSurvey.ACTION_SURVEY_SKIP}:
         return JsonResponse(
             {"success": False, "error": "Please verify your name before completing the survey.", "current_action": previous_action},
             status=409,
