@@ -171,7 +171,7 @@ class SurveyResponsesExportView(APIView):
             LearnerSurvey.objects
             .filter(
                 course_id=course_key,
-                action=LearnerSurvey.ACTION_SURVEY_SUBMIT,
+                # action=LearnerSurvey.ACTION_SURVEY_SUBMIT,
             )
             .select_related('user')
             .order_by('-created_at')
@@ -199,7 +199,7 @@ class SurveyResponsesExportView(APIView):
                 f"sr-{survey.survey_uuid.int % (10 ** 16)}",   # deterministic short ID
                 self.SURVEY_NAME,
                 self.SURVEY_SOURCE,
-                self._fmt_submitted_at(survey.created_at),
+                self._fmt_submitted_at(survey.created_at) if answer_cells else "Survey Skipped",
                 *answer_cells,
             ])
 
