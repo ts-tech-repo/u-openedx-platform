@@ -1,7 +1,10 @@
 from django.core.management.base import BaseCommand
+from django.db.models import Q
+from django.utils import timezone
 
 from custom_lms.sync import run_sync
 from custom_lms.models import AvSyncHistory
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 from openedx.core.djangoapps.content.block_structure.management.commands.generate_course_blocks import (
     get_mutually_exclusive_required_option,
 )
@@ -70,12 +73,29 @@ class Command(BaseCommand):
             # Remove duplicates while preserving order.
             course_ids = list(dict.fromkeys(course_ids))
 
-        print(
+        else:
+            # No courses supplied: sync all active courses.
+            now = timezone.now()
+
+            active_courses = CourseOverview.objects.filter(
+                start__lte=now,
+            ).filter(
+                Q(end__isnull=True) | Q(end__gt=now)
+            )
+
+            course_ids = [
+                str(course.id)
+                for course in active_courses
+            ]
+
+        self.stdout.write(
             f"Running CMU dashboard sync "
             f"(trigger={trigger}, courses_mode={courses_mode})"
         )
 
-        print(f"Course IDs: {course_ids}")
+        self.stdout.write(
+            f"Course IDs: {course_ids}"
+        )
 
         history = run_sync(
             trigger=trigger,

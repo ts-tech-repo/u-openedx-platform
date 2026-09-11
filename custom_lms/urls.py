@@ -9,7 +9,12 @@ Mount in your project urls.py, e.g.:
 from django.urls import path
 
 from custom_lms.api import learner_survey
-from custom_lms.views.admin_view import DashboardStatsView, LearnerListView 
+from custom_lms.views.admin_view import (
+    DashboardStatsView,
+    LearnerListView,
+    LearnerProgressExportView,
+    SurveyResponsesExportView,
+)
 
 app_name = "custom_lms"
 
@@ -20,4 +25,6 @@ urlpatterns = [
     path("survey/submit/", learner_survey.submit_survey, name="survey-submit"),
     path('api/v1/stats/', DashboardStatsView.as_view(), name='cmu_dashboard_stats'),
     path('api/v1/learners/', LearnerListView.as_view(), name='cmu_dashboard_learners'),
+    path('api/v1/export/learners-progress/', LearnerProgressExportView.as_view(), name='export_learner_progress'),
+    path('api/v1/export/survey-responses/', SurveyResponsesExportView.as_view(), name='export_survey_responses'),
 ]
