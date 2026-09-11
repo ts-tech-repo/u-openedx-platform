@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from common.djangoapps.student.models.course_enrollment import CourseEnrollment
+from custom_lms.models.admin_view import AvLearners, AvSummary
 from custom_lms.views.eligibility import is_eligible_for_certificate, get_course_progress_percent
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 
@@ -72,63 +73,126 @@ def is_active_user(user_profile_last_login):
     return timezone.now() - user_profile_last_login <= timedelta(hours=LAST_LOGIN_ACTIVE_THRESHOLD_HOURS)
 
 def get_dashboard_stats(course_key):
-    enrollments = CourseEnrollment.objects.filter(
-        course_id=course_key, is_active=True
-    ).select_related('user', 'user__profile')
+    """
+    Fetches dashboard statistics for a given course.
+    Returns a dictionary with the following keys:
+        - course_name: str
+        - total_learners: int
+        - completion_rate: float
+        - active_users: int
+        - avg_kc_completed: float
+        - kc_total: int
+    """
+    log.info("Fetching dashboard stats for course=%s", course_key)
     
     course_name = _get_course_name(course_key)
+    log.info("Course name for course=%s: %s", course_key, course_name)
 
-    total_learners = enrollments.count()
-    if total_learners == 0:
-        return {
-            "total_learners": 0, "completion_rate": 0,
-            "active_users": 0, "avg_kc_completed": 0,
+    summary = (
+        AvSummary.objects
+        .filter(course_id=course_key)
+        .values(
+            "enrolled_count",
+            "completion_rate",
+            "active_learners_count",
+            "av_checkpoints_completed",
+            "checkpoints_total",
+        )
+        .first()
+    )
+
+    if not summary:
+        log.warning("No AvSummary found for course=%s", course_key)
+        result = {
+            "course_name": course_name,
+            "total_learners": 0,
+            "completion_rate": 0,
+            "active_users": 0,
+            "avg_kc_completed": 0,
             "kc_total": 0,
         }
+        return result
 
-    completed_count = 0
-    active_count = 0
-    kc_sum = 0
-    expected_checkpoints = 0
+    total_learners = summary["enrolled_count"]
 
-    for enrollment in enrollments:
-        user = enrollment.user
-        
-        expected_checkpoints, completed_checkpoints = _get_checkpoints_completed(user, course_key)
-        kc_sum += completed_checkpoints
-        if completed_checkpoints >= expected_checkpoints:
-            completed_count += 1
-            
-        if is_active_user(getattr(user, 'last_login', None)):
-            active_count += 1
-
-    return {
+    result = {
         "course_name": course_name,
         "total_learners": total_learners,
-        "completion_rate": round((completed_count / total_learners) * 100),
-        "active_users": active_count,
-        "avg_kc_completed": round(kc_sum / total_learners, 2),
-        "kc_total": expected_checkpoints,
+        "completion_rate": summary["completion_rate"],
+        "active_users": summary["active_learners_count"],
+        "avg_kc_completed": round(
+            summary["av_checkpoints_completed"] / total_learners,
+            2,
+        ) if total_learners else 0,
+        "kc_total": summary["checkpoints_total"],
     }
+
+    log.info(
+        "Dashboard stats for course=%s: learners=%s, completion_rate=%s%%, "
+        "active_users=%s, avg_kc_completed=%s, kc_total=%s",
+        course_key,
+        result["total_learners"],
+        result["completion_rate"],
+        result["active_users"],
+        result["avg_kc_completed"],
+        result["kc_total"],
+    )
+    return result
 
 
 def get_learner_rows(course_key):
-    enrollments = CourseEnrollment.objects.filter(
-        course_id=course_key, is_active=True
-    ).select_related('user', 'user__profile')
+    """"
+    Fetches rows of learner data for a given course.
+    Returns a list of dictionaries, each containing:
+        - user_id: int
+        - name: str
+        - enrolled_on: datetime
+        - course_progress: float
+        - kc_completed: int
+        - kc_total: int
+        - last_login: datetime
+        - program_status: str ("Completed" or "In Progress")
+    """
+    log.info("Fetching learner rows for course=%s", course_key)
 
-    rows = []
-    for enrollment in enrollments:
-        user = enrollment.user
-        expected_checkpoints, completed_checkpoints = _get_checkpoints_completed(user, course_key)
-        rows.append({
-            "user_id": user.id,
-            "name": user.profile.name if hasattr(user, 'profile') else user.username,
-            "enrolled_on": enrollment.created,
-            "course_progress": get_course_progress_percent(user, course_key),
-            "kc_completed": completed_checkpoints,
-            "kc_total": expected_checkpoints,
-            "last_login": user.last_login,
-            "program_status": "Completed" if completed_checkpoints >= expected_checkpoints else "In Progress",
-        })
-    return rows
+    learners = list(
+        AvLearners.objects
+        .filter(course_id=course_key)
+        .values(
+            "user_id",
+            "name",
+            "enrolled_on",
+            "course_progress",
+            "checkpoints_completed",
+            "checkpoints_total",
+            "last_login",
+            "program_status",
+        )
+        .order_by("name")
+    )
+
+    result = [
+        {
+            "user_id": learner["user_id"],
+            "name": learner["name"],
+            "enrolled_on": learner["enrolled_on"],
+            "course_progress": learner["course_progress"],
+            "kc_completed": learner["checkpoints_completed"],
+            "kc_total": learner["checkpoints_total"],
+            "last_login": learner["last_login"],
+            "program_status": (
+                "Completed"
+                if learner["program_status"] == AvLearners.STATUS_COMPLETED
+                else "In Progress"
+            ),
+        }
+        for learner in learners
+    ]
+
+    log.info(
+        "Learner rows completed for course=%s: rows=%s",
+        course_key,
+        len(result),
+    )
+
+    return result
