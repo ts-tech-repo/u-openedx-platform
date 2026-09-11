@@ -1,5 +1,6 @@
 # custom_lms/apps/cmu_dashboard/views.py
 import csv
+import json
 import logging
 
 from django.http import HttpResponse
@@ -86,6 +87,7 @@ class LearnerProgressExportView(APIView):
         # Header — must match the reference CSV exactly
         writer.writerow([
             'Name',
+            'Email',
             'Date of Enrolment',
             'Course Progress',
             'KC Completed (>60%)',
@@ -96,6 +98,7 @@ class LearnerProgressExportView(APIView):
         for row in rows:
             writer.writerow([
                 row.get('name', ''),
+                row.get('email', ''),
                 self._fmt_date(row.get('enrolled_on')),
                 f"{row.get('course_progress', 0)}%",
                 f"{row.get('kc_completed', 0)}/{row.get('kc_total', 0)}",
@@ -116,41 +119,18 @@ class SurveyResponsesExportView(APIView):
     """
     GET /extras/api/v1/export/survey-responses/?course_id=...
 
-    Returns a CSV file with one row per submitted survey response, matching
-    the format:
-
-        ID, Survey Name, Source, Submitted At,
-        <question 1>, <question 2>, <question 3>, <question 4>,
-        Is there anything that would enhance your experience in the program?
+    Returns a CSV file with one row per submitted survey response.
+    Questions and answers are dynamically extracted from survey metadata.
     """
+
     permission_classes = [IsInstructorOrAdmin]
 
-    # Survey display metadata — kept here so it's easy to move to settings
-    # later without touching the query logic.
     SURVEY_NAME = 'CMU Survey'
     SURVEY_SOURCE = 'cmu-survey'
 
-    QUESTIONS = [
-        (
-            'The program helped me develop skills and knowledge needed to '
-            'understand, evaluate, and apply AI in my organization.'
-        ),
-        (
-            'The action plans and capstone helped me translate program '
-            'learning into a practical path for AI implementation in my organization.'
-        ),
-        'I would recommend the program to a colleague or friend.',
-        'Considering the time and money invested, this program was a good value.',
-        'Is there anything that would enhance your experience in the program?',
-    ]
-
-    # ------------------------------------------------------------------ #
-    # Formatting helpers                                                   #
-    # ------------------------------------------------------------------ #
-
     @staticmethod
     def _fmt_submitted_at(dt):
-        """'28/8/2026, 11:23:12 am' — matches the reference CSV."""
+        """Format datetime as: 28/8/2026, 11:23:12 am."""
         if not dt:
             return ''
         local_dt = timezone.localtime(dt) if timezone.is_aware(dt) else dt
@@ -183,30 +163,85 @@ class SurveyResponsesExportView(APIView):
 
         writer = csv.writer(response, quoting=csv.QUOTE_ALL)
 
-        # Header
-        writer.writerow(['ID', 'Survey Name', 'Source', 'Submitted At'] + self.QUESTIONS)
+        # -------------------------------------------------------------- #
+        # Get questions dynamically from survey metadata
+        # -------------------------------------------------------------- #
+
+        all_questions = []
 
         for survey in surveys:
-            # Build a lookup from question text → answer for this submission
+            metadata = survey.metadata or {}
+
+            survey_submit = metadata.get(
+                LearnerSurvey.ACTION_SURVEY_SUBMIT,
+                {},
+            )
+
+            answers = survey_submit.get('answers', [])
+
+            for item in answers:
+                question = item.get('question')
+
+                if question and question not in all_questions:
+                    all_questions.append(question)
+
+        # Header
+        writer.writerow([
+                'User',
+                'Survey Name',
+                'Source',
+                'Submitted At',
+                *all_questions,])
+
+        # -------------------------------------------------------------- #
+        # Write survey responses
+        # -------------------------------------------------------------- #
+
+        row_count = 0
+
+        for survey in surveys:
+            metadata = survey.metadata or {}
+
+            survey_submit = metadata.get(
+                LearnerSurvey.ACTION_SURVEY_SUBMIT,
+                {},
+            )
+
+            answers = survey_submit.get('answers', [])
+
             answers_lookup = {
-                item.get('question', ''): item.get('answer', '') if item.get('comment') is None else f"{item.get('answer', '')} ({item.get('comment')})"
-                for item in survey.answers          # property defined on the model
+                item.get('question', ''): (
+                    item.get('answer', '')
+                    if not item.get('comment')
+                    else (
+                        f"{item.get('answer', '')} "
+                        f"({item.get('comment')})"
+                    )
+                )
+                for item in answers
             }
 
-            answer_cells = [answers_lookup.get(q, '') for q in self.QUESTIONS]
+            answer_cells = [
+                answers_lookup.get(question, '')
+                for question in all_questions
+            ]
 
-            writer.writerow([
-                f"sr-{survey.survey_uuid.int % (10 ** 16)}",   # deterministic short ID
-                self.SURVEY_NAME,
-                self.SURVEY_SOURCE,
-                self._fmt_submitted_at(survey.created_at) if answer_cells else "Survey Skipped",
-                *answer_cells,
-            ])
+            writer.writerow(
+                [
+                    f"{survey.user.username} ({survey.user.email})",
+                    self.SURVEY_NAME,
+                    self.SURVEY_SOURCE,
+                    self._fmt_submitted_at(survey.created_at),
+                    *answer_cells,
+                ]
+            )
+
+            row_count += 1
 
         log.info(
             "SurveyResponsesExportView | course_id=%s | rows=%d | user=%s",
             course_id,
-            surveys.count(),
+            row_count,
             request.user.username,
         )
         return response

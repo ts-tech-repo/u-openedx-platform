@@ -146,6 +146,7 @@ def get_learner_rows(course_key):
     Returns a list of dictionaries, each containing:
         - user_id: int
         - name: str
+        - email: str
         - enrolled_on: datetime
         - course_progress: float
         - kc_completed: int
@@ -160,6 +161,7 @@ def get_learner_rows(course_key):
         .filter(course_id=course_key)
         .values(
             "user_id",
+            "user__email",
             "name",
             "enrolled_on",
             "course_progress",
@@ -175,6 +177,7 @@ def get_learner_rows(course_key):
         {
             "user_id": learner["user_id"],
             "name": learner["name"],
+            "email": learner["user__email"],
             "enrolled_on": learner["enrolled_on"],
             "course_progress": learner["course_progress"],
             "kc_completed": learner["checkpoints_completed"],
