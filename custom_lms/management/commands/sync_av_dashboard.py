@@ -5,10 +5,6 @@ from django.utils import timezone
 from custom_lms.sync import run_sync
 from custom_lms.models import AvSyncHistory
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
-from openedx.core.djangoapps.content.block_structure.management.commands.generate_course_blocks import (
-    get_mutually_exclusive_required_option,
-)
-
 
 class Command(BaseCommand):
     help = "Recomputes CMU Admin Dashboard cache tables (av_learners, av_summary)."
@@ -44,10 +40,7 @@ class Command(BaseCommand):
             else AvSyncHistory.TRIGGER_CRON
         )
 
-        courses_mode = get_mutually_exclusive_required_option(
-            options,
-            "courses",
-        )
+        courses_mode = "courses" if options.get("courses") else None
 
         course_ids = None
 
@@ -60,21 +53,16 @@ class Command(BaseCommand):
                 if not course:
                     continue
 
-                # Support comma-separated values.
                 for course_id in course.split(","):
                     course_id = course_id.strip()
-
-                    # Remove accidental surrounding brackets.
                     course_id = course_id.strip("[]")
 
                     if course_id:
                         course_ids.append(course_id)
 
-            # Remove duplicates while preserving order.
             course_ids = list(dict.fromkeys(course_ids))
 
         else:
-            # No courses supplied: sync all active courses.
             now = timezone.now()
 
             active_courses = CourseOverview.objects.filter(
