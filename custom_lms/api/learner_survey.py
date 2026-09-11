@@ -87,7 +87,7 @@ def _certificate_date_display():
     """
     Return certificate date in display format.
     """
-    return timezone.now().strftime("%B %-d, %Y")
+    return timezone.now().strftime("%-d %B %Y")
 
 
 # ----------------------------------------------------------------------

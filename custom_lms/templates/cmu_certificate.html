@@ -55,8 +55,6 @@ certificate_date='',
         height: 190mm;
         margin: 0;
         padding: 15px;
-        background: hsl(35, 20%, 88%) !important;
-        background-color: hsl(35, 20%, 88%) !important;
         overflow: hidden;
         page-break-before: avoid !important;
         page-break-after: avoid !important;
@@ -134,16 +132,16 @@ certificate_date='',
         break-inside: avoid !important;
     }
     .muted {
-        color: #777777;
+        color: #363f52;
         margin: 8px 0;
         padding: 0;
-        font-size: 1rem;
+        font-size: 1.5rem;
         line-height: 1.3;
     }
     .recipient {
         margin: 16px 0;
         padding: 0;
-        font-size: 1.875rem;
+        font-size: 2rem;
         color: hsl(345, 75%, 45%);
         line-height: 1.2;
     }
@@ -152,7 +150,7 @@ certificate_date='',
         max-width: 720px;
         margin: 16px auto;
         padding: 0;
-        font-size: 1.5rem;
+        font-size: 1.95rem;
         line-height: 1.4;
         color: hsl(0, 60%, 45%);
     }
@@ -168,10 +166,9 @@ certificate_date='',
      */
     .signatures {
         position: relative;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 40px;
-        margin-top: 80px;
+        display:flex;
+        justify-content: space-between;
+        margin-top: 60px;
         page-break-before: avoid !important;
         page-break-after: avoid !important;
         page-break-inside: avoid !important;
@@ -196,8 +193,7 @@ certificate_date='',
     .signature-name {
         height: 80px;
         text-align: center;
-        line-height: 80px; /* Pushes the inline-block image to the vertical center of this line box */
-        margin-bottom: 4px;
+        line-height: 80px; 
         padding: 0;
     }
  
@@ -224,7 +220,7 @@ certificate_date='',
      */
     .signature-line {
         border-top: 1px solid rgba(0, 0, 0, 0.6);
-        width: 80%;
+        width: 110%;
         margin: 0 auto;
         padding: 0;
     }
@@ -238,7 +234,7 @@ certificate_date='',
         margin-top: 8px;
         margin-bottom: 0;
         padding: 0;
-        font-size: 0.75rem;
+        font-size: 1.25rem;
         line-height: 1.5;
         color: hsl(0, 50%, 45%);
         page-break-inside: avoid !important;
@@ -290,7 +286,7 @@ certificate_date='',
     <div class="program-section">
         <p class="muted">
             This document confirms that
-        </p>y
+        </p>
         <p class="recipient">
             ${learner_name}
         </p>
@@ -322,26 +318,28 @@ certificate_date='',
             </div>
             <div class="signature-line"></div>
             <p class="signature-title">
-                Ram Konduru<br>
-                Director of Executive Education
+                <span style="font-weight: bold;">Ram Konduru</span><br>
+                Director, Executive and<br>
+                Professional Education<br>
+                School of Computer Science<br>
             </p>
         </div>
  
         <!-- ====================================================
-             AMIR BARATI FARIMANI
+             KRISTIN M. RISI
              ==================================================== -->
         <div class="signature">
             <div class="signature-name">
                 <img
                     src="${signature_url_2}"
-                    alt="Amir Barati Farimani"
+                    alt="Kristin M. Risi"
                 >
             </div>
             <div class="signature-line"></div>
             <p class="signature-title">
-                Amir Barati Farimani<br>
-                Russell V. Trader Associate Professor, Mechanical Engineering<br>
-                Courtesy Appointments: Biomedical Engineering, Chemical Engineering, Machine Learning
+                <span style="font-weight: bold;">Kristin M. Risi, MBA, Ph.D.</span><br>
+                Associate Dean, Executive Education<br>
+                Tepper School of Business<br>
             </p>
         </div>
  

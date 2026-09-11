@@ -293,8 +293,7 @@
 
         /* Certificate specific */
         .cert-container {
-            background: hsl(35, 20%, 88%);
-            padding: 1rem;
+            padding: 0;
             box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
             border-radius: var(--radius);
         }
@@ -322,7 +321,7 @@
         .cert-name {
             font-size: 1.875rem;
             color: hsl(345, 75%, 45%);
-            margin: 1rem 0;
+            margin: 0.25rem 0;
         }
         .cert-program {
             font-size: 1.5rem;
@@ -331,9 +330,14 @@
             margin: 0 auto;
             line-height: 1.3;
         }
+
+        .cert-body-text{
+            color: #363f52 !important;
+            font-size: 1.2rem !important;
+        }
         .cert-signatures {
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex;
+            justify-content: space-between;
             gap: 2.5rem;
             margin-top: 3rem;
             text-align: left;
@@ -641,11 +645,11 @@
                             </div>
                         </div>
                         <div class="mt-10">
-                            <p class="text-muted">This document confirms that</p>
+                            <p class="text-muted cert-body-text">This document confirms that</p>
                             <p class="cert-name" id="cert-recipient">${learner_name}</p>
-                            <p class="text-muted">has successfully completed the program</p>
+                            <p class="text-muted cert-body-text">has successfully completed the program</p>
                             <p class="cert-program">${program_name}</p>
-                            <p class="text-muted mt-4" id="cert-date">${certificate_date}</p>
+                            <p class="text-muted mt-4 cert-body-text" id="cert-date">${certificate_date}</p>
                         </div>
                         <div class="cert-signatures">
                             <div>
@@ -653,18 +657,22 @@
                                     <img src="${signature_url_1}" alt="Ram C. Konduru">
                                 </p>
                                 <div class="sig-line"></div>
-                                <p class="sig-title">Ram Konduru Director of Executive Education</p>
+                                <p class="sig-title">
+                                    <span style="font-weight: bold;">Ram Konduru</span><br>
+                                    Director, Executive and<br>
+                                    Professional Education<br>
+                                    School of Computer Science<br>
+                                </p>
                             </div>
                             <div>
                                 <p class="sig-name">
-                                    <!-- TODO: Replace with actual Amir Barati signature image URL -->
-                                    <img src="${signature_url_2}" alt="Amir Barati Farimani">
+                                    <img src="${signature_url_2}" alt="Kristin M. Risi">
                                 </p>
                                 <div class="sig-line"></div>
                                 <p class="sig-title">
-                                    Amir Barati Farimani<br>
-                                    Russell V. Trader Associate Professor, Mechanical Engineering<br>
-                                    Courtesy Appointments: Biomedical Engineering, Chemical Engineering, Machine Learning
+                                    <span style="font-weight: bold;">Kristin M. Risi, MBA, Ph.D.</span><br>
+                                    Associate Dean, Executive Education<br>
+                                    Tepper School of Business<br>
                                 </p>
                             </div>
                         </div>
