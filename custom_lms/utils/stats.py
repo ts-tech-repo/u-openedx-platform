@@ -7,10 +7,22 @@ from django.utils import timezone
 
 from common.djangoapps.student.models.course_enrollment import CourseEnrollment
 from custom_lms.views.eligibility import is_eligible_for_certificate, get_course_progress_percent
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 
 log = logging.getLogger(__name__)
 
 LAST_LOGIN_ACTIVE_THRESHOLD_HOURS = getattr(settings, "LAST_LOGIN_ACTIVE_THRESHOLD_HOURS", 168) # 24 * 7 = 168 hours = 1 week
+
+def _get_course_name(course_key):
+    """
+    Returns the course name for the given course key.
+    """
+    try:
+        course_overview = CourseOverview.objects.get(id=course_key)
+        return course_overview.display_name
+    except CourseOverview.DoesNotExist as e:
+        log.error("CourseOverview for %s not found: %s", course_key, str(e))
+        return str(course_key)  # Fallback to course key string if not found
 
 def _get_checkpoints_completed(user, course_key):
     """
@@ -63,6 +75,8 @@ def get_dashboard_stats(course_key):
     enrollments = CourseEnrollment.objects.filter(
         course_id=course_key, is_active=True
     ).select_related('user', 'user__profile')
+    
+    course_name = _get_course_name(course_key)
 
     total_learners = enrollments.count()
     if total_learners == 0:
@@ -89,6 +103,7 @@ def get_dashboard_stats(course_key):
             active_count += 1
 
     return {
+        "course_name": course_name,
         "total_learners": total_learners,
         "completion_rate": round((completed_count / total_learners) * 100),
         "active_users": active_count,
