@@ -153,9 +153,12 @@ def upload_file_to_s3(
 
         if CLOUDFRONT_DOMAIN:
             cloudfront_domain = CLOUDFRONT_DOMAIN.rstrip("/")
+            
+            clean_s3_key = s3_key.lstrip("/")
 
             cloudfront_url = (
-                f"{cloudfront_domain}/{s3_key.lstrip('/')}"
+                f"{cloudfront_domain}/"
+                f"{'/'.join(clean_s3_key.split('/')[1:])}"
             )
 
             logger.info(
