@@ -73,8 +73,13 @@ def _sync_course(course_key, history):
         expected_checkpoints, completed_checkpoints = _get_checkpoints_completed(user, course_key)
         progress = get_course_progress_percent(user, course_key)
         status = (
-            AvLearners.STATUS_COMPLETED if completed_checkpoints >= expected_checkpoints
-            else AvLearners.STATUS_IN_PROGRESS
+            AvLearners.STATUS_NONE
+            if expected_checkpoints == 0
+            else (
+                AvLearners.STATUS_COMPLETED
+                if completed_checkpoints >= expected_checkpoints
+                else AvLearners.STATUS_IN_PROGRESS
+            )
         )
 
         AvLearners.objects.update_or_create(
@@ -93,7 +98,7 @@ def _sync_course(course_key, history):
 
         total_learners += 1
         kc_sum += completed_checkpoints
-        if completed_checkpoints >= expected_checkpoints:
+        if expected_checkpoints > 0 and completed_checkpoints >= expected_checkpoints:
             completed_count += 1
         if is_active_user(user.last_login):
             active_count += 1
@@ -104,13 +109,16 @@ def _sync_course(course_key, history):
     ).delete()
 
     in_progress_count = total_learners - completed_count
+    completion_rate = 0
+    if total_learners and total_learners > 0:
+        completion_rate = round((completed_count / total_learners) * 100, 1)
     AvSummary.objects.update_or_create(
         course_id=course_key,
         defaults=dict(
             enrolled_count=total_learners,
             completed_count=completed_count,
             in_progress_count=in_progress_count,
-            completion_rate=round((completed_count / total_learners) * 100, 1) if total_learners else 0,
+            completion_rate=completion_rate,
             active_learners_count=active_count,
             av_checkpoints_completed=round(kc_sum / total_learners, 2) if total_learners else 0,
             checkpoints_total=expected_checkpoints,
