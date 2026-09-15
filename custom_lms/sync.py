@@ -26,14 +26,17 @@ def run_sync(trigger=AvSyncHistory.TRIGGER_CRON, course_ids=None):
         or CourseEnrollment.objects.filter(is_active=True)
             .values_list('course_id', flat=True).distinct()
     )
+    
+    error_reason = {}
 
     for course_key in course_id_qs:
         try:
             learners_total += _sync_course(course_key, history)
             courses_ok += 1
-        except Exception:
+        except Exception as e:
+            error_reason[course_key] = str(e)
             courses_failed += 1
-            log.exception("CMU dashboard sync failed for course %s", course_key)
+            log.exception("CMU dashboard sync failed for course %s | err = %s", course_key, e)
 
     history.finished_at = timezone.now()
     history.duration_seconds = round(time.monotonic() - start, 2)
@@ -45,6 +48,7 @@ def run_sync(trigger=AvSyncHistory.TRIGGER_CRON, course_ids=None):
         else AvSyncHistory.STATUS_PARTIAL if courses_ok > 0
         else AvSyncHistory.STATUS_FAILED
     )
+    history.error_message = error_reason
     history.save()
     return history
 
