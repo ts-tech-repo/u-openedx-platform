@@ -11,11 +11,11 @@ class AvLearners(models.Model):
     """
     STATUS_COMPLETED = 'completed'
     STATUS_IN_PROGRESS = 'in_progress'
-    STATUS_NONE = '-'
+    STATUS_NONE = '—'
     STATUS_CHOICES = [
         (STATUS_COMPLETED, 'Completed'),
         (STATUS_IN_PROGRESS, 'In Progress'),
-        (STATUS_NONE, '-')
+        (STATUS_NONE, '—')
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True)

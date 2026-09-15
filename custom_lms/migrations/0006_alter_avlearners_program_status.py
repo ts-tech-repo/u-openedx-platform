@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("custom_lms", "0005_<previous_migration_name>"),
+        ("custom_lms", "0005_alter_surveyresponse_unique_together_and_more"),
     ]
 
     operations = [
@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
                 choices=[
                     ("completed", "Completed"),
                     ("in_progress", "In Progress"),
-                    ("-", "-"),
+                    ("—", "—"),
                 ],
                 default="in_progress",
                 max_length=16,

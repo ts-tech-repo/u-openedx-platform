@@ -184,9 +184,13 @@ def get_learner_rows(course_key):
             "kc_total": learner["checkpoints_total"],
             "last_login": learner["last_login"],
             "program_status": (
-                "Completed"
-                if learner["program_status"] == AvLearners.STATUS_COMPLETED
-                else "In Progress"
+                "—"
+                if learner["checkpoints_completed"] == 0 and learner["checkpoints_total"] == 0
+                else(
+                    "Completed"
+                    if learner["program_status"] == AvLearners.STATUS_COMPLETED
+                    else "In Progress"
+                )
             ),
         }
         for learner in learners
