@@ -62,6 +62,7 @@ def _sync_course(course_key, history):
     completed_count = 0
     active_count = 0
     kc_sum = 0
+    expected_checkpoints = 0
 
     seen_user_ids = []
     for enrollment in enrollments:
