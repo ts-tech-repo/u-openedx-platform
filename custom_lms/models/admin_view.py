@@ -54,7 +54,7 @@ class AvSummary(models.Model):
     completed_count = models.PositiveIntegerField(default=0)
     completion_rate = models.PositiveIntegerField(default=0)  # percentage
     active_learners_count = models.PositiveIntegerField(default=0)
-    av_checkpoints_completed = models.PositiveIntegerField(default=0)
+    av_checkpoints_completed = models.DecimalField(max_digits=10, decimal_places=1, default=0.0)
     completed_checkpoints_total = models.PositiveIntegerField(default=0)
     checkpoints_total = models.PositiveIntegerField(default=0)
 

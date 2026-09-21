@@ -55,7 +55,7 @@ class LearnerProgressExportView(APIView):
         """'12 Sep 2025' — day without zero-padding."""
         if not dt:
             return ''
-        local_dt = timezone.localtime(dt) if timezone.is_aware(dt) else dt
+        local_dt = dt
         return local_dt.strftime('%-d %b %Y')
 
     @staticmethod
@@ -63,7 +63,7 @@ class LearnerProgressExportView(APIView):
         """'11 Sept 2026, 10:39 am' — matches the sample CSV."""
         if not dt:
             return ''
-        local_dt = timezone.localtime(dt) if timezone.is_aware(dt) else dt
+        local_dt = dt
         # %-I  — hour without leading zero
         # %p   — AM/PM; lower() gives am/pm
         return local_dt.strftime('%-d %b %Y, %-I:%M ') + local_dt.strftime('%p').lower()
@@ -133,9 +133,9 @@ class SurveyResponsesExportView(APIView):
         """Format datetime as: 28/8/2026, 11:23:12 am."""
         if not dt:
             return ''
-        local_dt = timezone.localtime(dt) if timezone.is_aware(dt) else dt
-        date_part = local_dt.strftime('%-d/%-m/%Y')
-        time_part = local_dt.strftime('%-I:%M:%S ') + local_dt.strftime('%p').lower()
+        local_dt = dt
+        date_part = local_dt.strftime('%b %d, %Y')
+        time_part = local_dt.strftime('%I:%M:%S %p')
         return f"{date_part}, {time_part}"
 
     # ------------------------------------------------------------------ #

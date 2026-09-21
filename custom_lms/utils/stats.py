@@ -120,10 +120,7 @@ def get_dashboard_stats(course_key):
         "total_learners": total_learners,
         "completion_rate": summary["completion_rate"],
         "active_users": summary["active_learners_count"],
-        "avg_kc_completed": round(
-            summary["av_checkpoints_completed"] / total_learners,
-            2,
-        ) if total_learners else 0,
+        "avg_kc_completed": summary["av_checkpoints_completed"],
         "kc_total": summary["checkpoints_total"],
     }
 
