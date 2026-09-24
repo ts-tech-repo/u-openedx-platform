@@ -61,7 +61,10 @@ def _sync_course(course_key, history):
     total_learners = 0
     completed_count = 0
     active_count = 0
+
     kc_sum = 0
+    kc_avg_learners = 0
+
     expected_checkpoints = 0
 
     seen_user_ids = []
@@ -102,9 +105,14 @@ def _sync_course(course_key, history):
         seen_user_ids.append(user.id)
 
         total_learners += 1
-        kc_sum += completed_checkpoints
+
         if expected_checkpoints > 0 and completed_checkpoints >= expected_checkpoints:
             completed_count += 1
+        else:
+            # Only learners who have NOT completed all KCs
+            kc_sum += completed_checkpoints
+            kc_avg_learners += 1
+
         if is_active_user(user.last_login):
             active_count += 1
 
@@ -117,6 +125,9 @@ def _sync_course(course_key, history):
     completion_rate = 0
     if total_learners and total_learners > 0:
         completion_rate = round((completed_count / total_learners) * 100, 1)
+    
+    av_checkpoints_completed = round(kc_sum / kc_avg_learners, 2) if kc_avg_learners else 0
+        
     AvSummary.objects.update_or_create(
         course_id=course_key,
         defaults=dict(
@@ -125,7 +136,7 @@ def _sync_course(course_key, history):
             in_progress_count=in_progress_count,
             completion_rate=completion_rate,
             active_learners_count=active_count,
-            av_checkpoints_completed=round(kc_sum / total_learners, 2) if total_learners else 0,
+            av_checkpoints_completed=av_checkpoints_completed,
             checkpoints_total=expected_checkpoints,
         ),
     )
