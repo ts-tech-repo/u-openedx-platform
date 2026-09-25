@@ -95,6 +95,7 @@ def _is_certificate_enabled(course_id):
     Defaults to True for backward compatibility.
     """
     try:
+        FIELD_NAME = "enable_certificate"
         from xmodule.modulestore.django import modulestore
 
         course = modulestore().get_course(course_id)
