@@ -1,0 +1,394 @@
+"""
+Certificate eligibility checks for custom_lms.
+
+Per the PRD: a learner is eligible for their certificate once they've
+scored at least the configured passing score on every graded subsection
+defined in the course's GRADER policy.
+"""
+
+import logging
+from typing import Tuple, Dict, List, Any
+
+from lms.djangoapps.course_home_api.progress.api import aggregate_assignment_type_grade_summary
+from lms.djangoapps.course_home_api.progress.views import ProgressTabView
+from opaque_keys.edx.keys import CourseKey
+from lms.djangoapps.courseware.courses import get_course_blocks_completion_summary, get_course_by_id
+
+log = logging.getLogger(__name__)
+
+# ------------------------------------------------------------------ #
+#  Internal helpers                                                   #
+# ------------------------------------------------------------------ #
+
+def _as_course_key(course_id: str | CourseKey) -> CourseKey:
+    """Return a CourseKey, accepting either a string or an existing key."""
+    if isinstance(course_id, CourseKey):
+        return course_id
+    return CourseKey.from_string(str(course_id))
+
+
+def _get_grader_policies(course: Any) -> List[Dict]:
+    """Return all GRADER entries from the course grading policy."""
+    grading_policy = getattr(course, "grading_policy", None) or {}
+    grader_policies = grading_policy.get("GRADER", [])
+
+    if not isinstance(grader_policies, list):
+        log.warning(
+            "Invalid GRADER policy for course_id=%s: expected list, got %s",
+            getattr(course, "id", "?"),
+            type(grader_policies).__name__,
+        )
+        return []
+
+    return grader_policies
+
+
+def _get_grader_policy_by_type(course: Any) -> Dict[str, Dict]:
+    """
+    Build a case-insensitive mapping of assignment type -> GRADER policy entry.
+
+    If the same type appears more than once the last entry wins.
+
+    Example::
+
+        {"knowledge check": {...}, "assignment": {...}}
+    """
+    policies_by_type = {}
+    for policy in _get_grader_policies(course):
+        if not isinstance(policy, dict):
+            continue
+        
+        assignment_type = str(policy.get("type", "")).strip()
+        if assignment_type:
+            policies_by_type[assignment_type.lower()] = policy
+
+    return policies_by_type
+
+
+def _get_default_passing_score(course: Any) -> float:
+    """Return GRADE_CUTOFFS["Pass"] as a float, raising ValueError on bad data."""
+    grading_policy = getattr(course, "grading_policy", None) or {}
+    grade_cutoffs = grading_policy.get("GRADE_CUTOFFS") or {}
+    try:
+        return float(grade_cutoffs.get("Pass", 0.0))
+    except (TypeError, ValueError):
+        raise ValueError("Invalid GRADE_CUTOFFS['Pass'] value")
+
+
+def _get_passing_score(course: Any, grader_policy: Dict) -> float:
+    """
+    Return the passing score for an assignment type.
+
+    Resolution order:
+      1. ``grader_policy["min_passing_score"]``
+      2. ``GRADE_CUTOFFS["Pass"]``
+    """
+    per_type_score = grader_policy.get("min_passing_score")
+    if per_type_score is not None:
+        return float(per_type_score)
+    
+    return _get_default_passing_score(course)
+
+
+def _get_subsection_percent(subsection_grade: Any) -> float:
+    """
+    Return the learner's score for a subsection as a value in [0.0, 1.0].
+
+    Prefers ``percent_graded``; falls back to ``earned_graded / possible_graded``.
+    """
+    percent = getattr(subsection_grade, "percent_graded", None)
+    if percent is not None:
+        return float(percent)
+
+    possible = float(getattr(subsection_grade, "possible_graded", 0) or 0)
+    if not possible:
+        return 0.0
+    earned = float(getattr(subsection_grade, "earned_graded", 0) or 0)
+    return earned / possible
+
+
+# ------------------------------------------------------------------ #
+#  Public API                                                         #
+# ------------------------------------------------------------------ #
+
+def is_eligible_for_certificate(
+    user: Any, course_id: str | CourseKey
+) -> Tuple[bool, Dict]:
+    """
+    Check whether a learner is eligible for their certificate.
+
+    A learner is eligible when:
+
+    1. The course can be loaded.
+    2. The course has at least one valid GRADER entry.
+    3. The learner's course grade can be loaded.
+    4. Every graded subsection whose ``format`` matches a GRADER ``type``
+       meets its applicable passing score.
+
+    Returns:
+        ``(eligible, details)`` where *details* always contains:
+
+        * ``graded_subsections`` – list of per-subsection result dicts.
+        * ``minimum_score``      – course-wide Pass cutoff (float, 0-100).
+        * ``error``              – present only on failure; a short error key.
+    """
+    # Lazy import — keeps module importable without the full LMS stack.
+    from lms.djangoapps.grades.api import CourseGradeFactory
+
+    course_key = _as_course_key(course_id)
+
+    # 1. Load course
+    try:
+        course = get_course_by_id(course_key)
+        grading_policy = getattr(course, "grading_policy", None) or {}
+        log.info("Course grading policy for course_id=%s: %s", course_key, grading_policy)
+    except Exception:
+        log.exception("Unable to load course for user_id=%s course_id=%s", user.username, course_key)
+        return False, {
+            "graded_subsections": [],
+            "minimum_score": 0.0,
+            "error": "course_unavailable",
+        }
+
+    # 2. Get GRADER policies
+    grader_policies = _get_grader_policies(course)
+    if not grader_policies:
+        log.warning("No GRADER assignment types configured in grading policy for course_id=%s", course_key)
+        return False, {
+            "graded_subsections": [],
+            "minimum_score": 0.0,
+            "error": "grader_policy_not_configured",
+        }
+
+    # 3. Build assignment-type lookup
+    grader_policies_by_type = _get_grader_policy_by_type(course)
+    if not grader_policies_by_type:
+        log.warning("GRADER policy contains no valid assignment types for course_id=%s", course_key)
+        return False, {
+            "graded_subsections": [],
+            "minimum_score": 0.0,
+            "error": "grader_policy_not_configured",
+        }
+
+    log.info("Graded assignment types for course_id=%s: %s", course_key, list(grader_policies_by_type.keys()))
+
+    # 4. Get default course-wide passing score
+    try:
+        default_minimum_score = _get_default_passing_score(course)
+    except ValueError:
+        log.exception("Invalid Pass cutoff in grading policy: course_id=%s", course_key)
+        return False, {
+            "graded_subsections": [],
+            "minimum_score": 0.0,
+            "error": "invalid_pass_cutoff",
+        }
+
+    log.info("Course-wide passing score: course_id=%s minimum_score=%s", course_key, default_minimum_score)
+
+    # 5. Load learner course grade
+    try:
+        course_grade = CourseGradeFactory().read(user, course_key=course_key)
+        log.info("Loaded course grade for user_id=%s course_id=%s", user.username, course_key)
+    except Exception:
+        log.exception("Unable to load course grade for user_id=%s course_id=%s", user.username, course_key)
+        return False, {
+            "graded_subsections": [],
+            "minimum_score": float(default_minimum_score),
+            "error": "grade_unavailable",
+        }
+
+    # 6. Evaluate graded subsections ----------------------------------------
+    graded_subsections: List[Dict] = []
+    all_passed = True
+
+    for subsection_grade in course_grade.subsection_grades.values():
+        if not getattr(subsection_grade, "graded", False):
+            continue
+
+        subsection_format = str(getattr(subsection_grade, "format", "") or "").strip()
+        display_name = str(getattr(subsection_grade, "display_name", "") or "").strip()
+
+        log.info(
+            "Subsection: display_name=%s format=%s graded=%s",
+            display_name,
+            subsection_format,
+            getattr(subsection_grade, "graded", False),
+        )
+
+        if not subsection_format:
+            log.info("Skipping subsection with no format: display_name=%s", display_name)
+            continue
+
+        grader_policy = grader_policies_by_type.get(subsection_format.lower())
+        if not grader_policy:
+            log.info(
+                "Skipping subsection not in GRADER config: display_name=%s format=%s",
+                display_name,
+                subsection_format,
+            )
+            continue
+
+        # Passing score for this assignment type
+        try:
+            minimum_score = _get_passing_score(course, grader_policy)
+        except (TypeError, ValueError):
+            log.exception(
+                "Invalid passing score: assignment_type=%s course_id=%s",
+                subsection_format,
+                course_key,
+            )
+            return False, {
+                "graded_subsections": graded_subsections,
+                "minimum_score": float(default_minimum_score),
+                "error": "invalid_pass_cutoff",
+            }
+
+        # Validate passing score
+        if not 0.0 <= minimum_score <= 1.0:
+            log.error(
+                "Passing score out of range [0, 1]: assignment_type=%s "
+                "minimum_score=%s course_id=%s",
+                subsection_format,
+                minimum_score,
+                course_key,
+            )
+            return False, {
+                "graded_subsections": graded_subsections,
+                "minimum_score": float(default_minimum_score),
+                "error": "invalid_pass_cutoff",
+            }
+
+        # Learner score
+        try:
+            percent = _get_subsection_percent(subsection_grade)
+        except (TypeError, ValueError, ZeroDivisionError):
+            log.exception("Unable to calculate percentage for subsection=%s course_id=%s", display_name, course_key)
+            percent = 0.0
+
+        # Convert NumPy values to native Python types to prevent JSON serialization errors
+        percent = float(percent)
+        passed = bool(percent >= minimum_score)
+
+        if not passed:
+            all_passed = False
+
+        graded_subsections.append({
+            "display_name": display_name,
+            "format": subsection_format,
+            "percent": float(round(percent * 100, 1)),
+            "minimum_score": float(round(minimum_score * 100, 1)),
+            "passed": bool(passed),
+        })
+
+        log.info(
+            "Graded subsection: name=%s format=%s score=%.2f%% minimum=%.2f%% passed=%s",
+            display_name,
+            subsection_format,
+            percent * 100,
+            minimum_score * 100,
+            passed,
+        )
+
+    # 7. Final eligibility
+    # Fail closed when the course contains no matching graded subsections.
+    eligible = bool(graded_subsections and all_passed)
+
+    log.info(
+        "Certificate eligibility: user_id=%s course_id=%s eligible=%s graded_subsections=%s",
+        user.username,
+        course_key,
+        eligible,
+        len(graded_subsections),
+    )
+
+    return eligible, {
+        "graded_subsections": graded_subsections,
+        "knowledge_checks": graded_subsections,  # backward-compat alias
+        "minimum_score": float(default_minimum_score),
+    }
+
+
+def get_course_progress_percent(
+    user: Any,
+    course_key_str: str | CourseKey,
+) -> float:
+    """
+    Return the learner's weighted course grade as a percentage (0–100).
+
+    Supports `num_droppable` — lowest-scoring grades are dropped before
+    averaging when the policy configures it.
+
+    Returns `0` on any error.
+    """
+    from lms.djangoapps.grades.api import CourseGradeFactory
+
+    log.info(
+        "Starting course progress calculation: user_id=%s username=%s "
+        "course_key_input=%s input_type=%s",
+        getattr(user, "id", None),
+        getattr(user, "username", None),
+        course_key_str,
+        type(course_key_str).__name__,
+    )
+
+    # ------------------------------------------------------------------ #
+    # Normalize CourseKey
+    # ------------------------------------------------------------------ #
+    try:
+        course_key = _as_course_key(course_key_str)
+
+        log.info(
+            "CourseKey normalized successfully: user_id=%s course_id=%s "
+            "course_key_type=%s",
+            getattr(user, "id", None),
+            course_key,
+            type(course_key).__name__,
+        )
+    except Exception:
+        log.exception(
+            "Failed to normalize CourseKey: user_id=%s username=%s "
+            "course_key_input=%s input_type=%s",
+            getattr(user, "id", None),
+            getattr(user, "username", None),
+            course_key_str,
+            type(course_key_str).__name__,
+        )
+        return 0
+
+    completion_summary = get_course_blocks_completion_summary(course_key, user)
+    log.info(
+        "Completion summary retrieved: user=%s course_id=%s "
+        "completion_summary=%s",
+        getattr(user, "username", None),
+        course_key,
+        completion_summary,
+    )
+    if completion_summary is not None:
+        try:
+            complete_count = completion_summary.get("complete_count", 0)
+            incomplete_count = completion_summary.get("incomplete_count", 0)
+            locked_count = completion_summary.get("locked_count", 0)
+            total_count = complete_count + incomplete_count + locked_count
+            progress_percent = (complete_count / total_count) * 100 if total_count > 0 else 0.0
+            log.info(
+                "Course progress percent calculated: user=%s course_id=%s "
+                "progress_percent=%.2f%%",
+                getattr(user, "username", None),
+                course_key,
+                progress_percent,
+            )
+            return round(progress_percent)
+        except Exception:
+            log.exception(
+                "Failed to calculate course progress percent: user=%s "
+                "course_id=%s",
+                getattr(user, "username", None),
+                course_key,
+            )
+    else:
+        log.warning(
+            "Completion summary is None: user=%s course_id=%s",
+            getattr(user, "username", None),
+            course_key,
+        )
+    return 0

@@ -16,6 +16,7 @@ from openedx.core.djangoapps.site_configuration import (
 
 from c_ptc.helpers import _get_user, _get_post_login_ptc_data
 from c_ptc.models import UserPtcInfo
+from c_ptc.tasks import process_ptc_task
 
 log = logging.getLogger(__name__)
 
@@ -245,6 +246,12 @@ def submit_ptc(request, ptc_type):
             )
 
         log.info("[PTC] Final response=%s", response)
+        log.info("[PTC] about to queue celery task")
+        process_ptc_task.apply_async(
+            args=[user_ptc_info.ptc_type, request.user.id],
+            kwargs={"custom_message": f"PTC processed successfully for type {ptc_type}"},
+        )
+        log.info("[PTC] celery task queued successfully")
 
     except Exception:
         log.exception(

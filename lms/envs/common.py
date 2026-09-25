@@ -1990,10 +1990,14 @@ HIGH_MEM_QUEUE = f'edx.{QUEUE_VARIANT}core.high_mem'
 CELERY_DEFAULT_QUEUE = DEFAULT_PRIORITY_QUEUE
 CELERY_DEFAULT_ROUTING_KEY = DEFAULT_PRIORITY_QUEUE
 
+queue="ptc_tasks"
+PTC_QUEUE = f'edx.{QUEUE_VARIANT}core.ptc'
+
 CELERY_QUEUES = {
     HIGH_PRIORITY_QUEUE: {},
     DEFAULT_PRIORITY_QUEUE: {},
     HIGH_MEM_QUEUE: {},
+    PTC_QUEUE: {},
 }
 
 CELERY_ROUTES = "openedx.core.lib.celery.routers.route_task"
