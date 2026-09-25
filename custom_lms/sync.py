@@ -16,7 +16,6 @@ def run_sync(trigger=AvSyncHistory.TRIGGER_CRON, course_ids=None):
     Recomputes AvLearners + AvSummary for every course with active
     enrollments (or a specific list of course_ids, for targeted re-syncs).
     """
-    from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 
     history = AvSyncHistory.objects.create(trigger=trigger)
     start = time.monotonic()
@@ -30,9 +29,7 @@ def run_sync(trigger=AvSyncHistory.TRIGGER_CRON, course_ids=None):
             .values_list('course_id', flat=True).distinct()
     )
 
-    exclude_user_list = tuple(configuration_helpers.get_value(
-        'AV_SYNC_EXCLUDE_USER_LIST', getattr(settings, 'AV_SYNC_EXCLUDE_USER_LIST', [])
-    ))
+    exclude_user_list = tuple(getattr(settings, 'AV_SYNC_EXCLUDE_USER_LIST', []))
 
     error_reason = {}
 
