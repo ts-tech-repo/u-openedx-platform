@@ -89,6 +89,24 @@ def _certificate_date_display():
     """
     return timezone.now().strftime("%-d %B %Y")
 
+def _is_certificate_enabled(course_id):
+    """
+    Return whether custom certificates are enabled for the course.
+    Defaults to True for backward compatibility.
+    """
+    try:
+        from xmodule.modulestore.django import modulestore
+
+        course = modulestore().get_course(course_id)
+
+        return getattr(course, FIELD_NAME, True)
+    except Exception:
+        logger.exception(
+            "Failed to read certificate setting | course_id=%s",
+            course_id,
+        )
+        return True
+
 
 # ----------------------------------------------------------------------
 # Eligibility
@@ -272,6 +290,14 @@ def _generate_certificate(user, course_id):
 
     return True
 
+# ----------------------------------------------------------------------
+# Certificate Enabled
+# ----------------------------------------------------------------------
+@login_required
+@require_GET
+def certificate_enabled(request):
+    course_id = request.GET.get("course_id")
+    return JsonResponse({"enabled": _is_certificate_enabled(course_id)})
 
 # ----------------------------------------------------------------------
 # Certificate status

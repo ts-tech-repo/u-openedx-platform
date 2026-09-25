@@ -19,6 +19,7 @@ from custom_lms.views.admin_view import (
 app_name = "custom_lms"
 
 urlpatterns = [
+    path("certificate/enabled/", learner_survey.certificate_enabled, name="certificate-enabled"),
     path("certificate/status/", learner_survey.certificate_status, name="certificate-status"),
     path("certificate/generate/", learner_survey.certificate_generation_view, name="certificate-generate"),
     path("certificate/download/", learner_survey.certificate_download, name="certificate-download"),

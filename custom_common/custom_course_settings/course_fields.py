@@ -10,7 +10,6 @@ FIELD_NAME = "enable_certificate"
 
 
 def register_enable_certificate_field():
-    return
     """
     Register enable_certificate as a CourseFields/CourseBlock setting.
 
@@ -28,7 +27,7 @@ def register_enable_certificate_field():
             "If enabled, learners who satisfy the course certificate "
             "requirements can receive a certificate."
         ),
-        default=True,
+        default=False,
         scope=Scope.settings,
     )
 
