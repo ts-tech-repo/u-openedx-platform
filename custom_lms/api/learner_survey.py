@@ -106,7 +106,7 @@ def _is_certificate_enabled(course_id):
             "Failed to read certificate setting | course_id=%s",
             course_id,
         )
-        return True
+        return False
 
 
 # ----------------------------------------------------------------------
