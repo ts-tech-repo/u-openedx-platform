@@ -35,6 +35,7 @@ from common.djangoapps.edxmako.shortcuts import (
 from custom_common.utils.upload_to_s3 import upload_file_to_s3
 from custom_common.utils.deteministic_safe_aes import encrypt
 from custom_lms.models.learner_survey import LearnerSurvey
+from custom_lms.views.eligibility import _as_course_key, is_eligible_for_certificate
 
 from openedx.core.djangoapps.site_configuration import (
     helpers as configuration_helpers,
@@ -96,7 +97,6 @@ def _is_certificate_enabled(course_id):
     try:
         FIELD_NAME = "enable_certificate"
         from xmodule.modulestore.django import modulestore
-        from custom_lms.views.eligibility import _as_course_key, is_eligible_for_certificate
 
         course_key = _as_course_key(course_id)
 
