@@ -1,7 +1,33 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.html import format_html
 
 from ..models.admin_view import AvLearners, AvSummary, AvSyncHistory
+
+
+# --------------------------------------------------------------------------- #
+#  Common actions                                                              #
+# --------------------------------------------------------------------------- #
+
+def record_actions(obj):
+    update_url = reverse(
+        f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+        args=[obj.pk],
+    )
+    delete_url = reverse(
+        f"admin:{obj._meta.app_label}_{obj._meta.model_name}_delete",
+        args=[obj.pk],
+    )
+
+    return format_html(
+        '<a href="{}">Update</a>&nbsp;&nbsp;'
+        '<a href="{}" style="color:#ba2121;">Delete</a>',
+        update_url,
+        delete_url,
+    )
+
+
+record_actions.short_description = "Actions"
 
 
 # --------------------------------------------------------------------------- #
@@ -21,6 +47,7 @@ class AvLearnersAdmin(admin.ModelAdmin):
         "checkpoints_total",
         "enrolled_on",
         "last_login",
+        "record_actions",
     )
     list_filter = ("program_status",)
     search_fields = (
@@ -35,8 +62,6 @@ class AvLearnersAdmin(admin.ModelAdmin):
         "enrolled_on",
         "last_login",
     )
-    ordering = ("-last_login",)
-    date_hierarchy = "enrolled_on"
 
     @admin.display(description="Learner", ordering="user__username")
     def learner(self, obj):
@@ -47,6 +72,10 @@ class AvLearnersAdmin(admin.ModelAdmin):
         pct = obj.course_progress
         colour = "green" if pct >= 100 else ("orange" if pct >= 50 else "red")
         return format_html('<span style="color:{}">{} %</span>', colour, pct)
+
+    @admin.display(description="Actions")
+    def record_actions(self, obj):
+        return record_actions(obj)
 
 
 # --------------------------------------------------------------------------- #
@@ -67,14 +96,18 @@ class AvSummaryAdmin(admin.ModelAdmin):
         "av_checkpoints_completed",
         "completed_checkpoints_total",
         "checkpoints_total",
+        "record_actions",
     )
     search_fields = ("course_id",)
     readonly_fields = ("course_id",)
-    ordering = ("course_id",)
 
     @admin.display(description="Completion rate %", ordering="completion_rate")
     def completion_rate_display(self, obj):
         return f"{obj.completion_rate:.1f} %"
+
+    @admin.display(description="Actions")
+    def record_actions(self, obj):
+        return record_actions(obj)
 
 
 # --------------------------------------------------------------------------- #
@@ -108,8 +141,6 @@ class AvSyncHistoryAdmin(admin.ModelAdmin):
         "duration_seconds",
         "error_message",
     )
-    ordering = ("-started_at",)
-    date_hierarchy = "started_at"
 
     def has_add_permission(self, request):
         return False
