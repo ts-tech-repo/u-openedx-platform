@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from django.utils.translation import gettext_lazy as _
 from xblock.fields import Boolean, Scope
 
@@ -37,14 +35,5 @@ def register_enable_certificate_field():
     # Add the field to CourseBlock as well.
     setattr(CourseBlock, FIELD_NAME, field)
 
-    # Preserve the existing field order and insert our field immediately
-    # after "advanced_modules".
-    fields = OrderedDict()
-
-    for name, existing_field in CourseBlock.fields.items():
-        fields[name] = existing_field
-
-        if name == "advanced_modules":
-            fields[FIELD_NAME] = field
-
-    CourseBlock.fields = dict(fields)
+    # Add the field without replacing the existing field registry.
+    CourseBlock.fields[FIELD_NAME] = field
