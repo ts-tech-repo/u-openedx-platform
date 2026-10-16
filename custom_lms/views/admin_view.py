@@ -3,6 +3,7 @@ import csv
 import json
 import logging
 
+from django.conf import settings
 from django.http import HttpResponse
 from django.utils import timezone
 
@@ -166,6 +167,7 @@ class SurveyResponsesExportView(APIView):
         # -------------------------------------------------------------- #
         # Get questions dynamically from survey metadata
         # -------------------------------------------------------------- #
+        exclude_user_list = tuple(getattr(settings, 'AV_SYNC_EXCLUDE_USER_LIST', []))
 
         all_questions = []
 
@@ -200,6 +202,15 @@ class SurveyResponsesExportView(APIView):
         row_count = 0
 
         for survey in surveys:
+            user_email = survey.user.email
+            if exclude_user_list and user_email.lower().endswith(exclude_user_list):
+                log.info(
+                    "Skipping excluded user %s in course %s",
+                    user_email,
+                    course_id,
+                )
+                continue
+            
             metadata = survey.metadata or {}
 
             survey_submit = metadata.get(
