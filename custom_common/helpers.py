@@ -206,6 +206,8 @@ def send_enrollment_email(
             "no-reply@alv.talentsprint.com",
         )
     )
+    
+    from_name = mail_details.get("from_name", "")
 
     support_email = configuration_helpers.get_value(
         "CONTACT_EMAIL",
@@ -271,6 +273,8 @@ def send_enrollment_email(
             "from_email": from_address,
             "NOTIFY_PASSWORD": notify_password,
         }
+        if from_name:
+            payload["from_name"] = from_name
 
         for attempt in range(1, retries + 1):
             try:
