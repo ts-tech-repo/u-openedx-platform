@@ -39,13 +39,11 @@
 
             <tr>
                 <td><strong>Password:</strong></td>
-            % if password is not None:
-                <td>${password}</td>
-            % endif
-            </table>
-            % if password is None:
-                <td><em>Use your existing credentials to log in.</em></td>
-            % endif
+                % if password is not None:
+                    <td>${password}</td>
+                % else :
+                    <td><em>Use your existing credentials to log in.</em></td>
+                % endif
             </tr>
         </table>
 
@@ -69,7 +67,7 @@
 
         <p>
             If you have any questions or experience any issues accessing the program, please contact our support team at
-            ${support_email}.
+            <a href="mailto:${support_email}"> ${support_email}</a>.
         </p>
 
 
