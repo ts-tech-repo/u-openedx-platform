@@ -298,6 +298,7 @@ def send_enrollment_email(
                     "user_id=%s | status=%s | response=%s",
                     user.id,
                     response.status_code,
+                    response.text,
                 )
                 return True
 
