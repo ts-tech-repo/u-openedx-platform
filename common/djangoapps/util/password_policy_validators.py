@@ -10,6 +10,7 @@ import logging
 import string
 import unicodedata
 
+from django.conf import settings
 from django.contrib.auth.password_validation import MinimumLengthValidator as DjangoMinimumLengthValidator
 from django.contrib.auth.password_validation import get_default_password_validators
 from django.contrib.auth.password_validation import validate_password as django_validate_password
@@ -552,10 +553,17 @@ class CommonDictionaryWordsValidator:
     password (or its reverse) exists in the database.
     """
     def validate(self, password, user=None):
+        from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
         # Run the zxcvbn password strength estimator
         result = zxcvbn(password)
         score = result.get('score')
         feedback = result.get('feedback', {})
+        
+        DICTIONARY_WORDS_VALIDATOR_SCORE = configuration_helpers.get_value(
+            'DICTIONARY_WORDS_VALIDATOR_SCORE', getattr(settings, 'DICTIONARY_WORDS_VALIDATOR_SCORE', 3)
+        )
+        log.info("Password validation score threshold: %s", DICTIONARY_WORDS_VALIDATOR_SCORE)
+        log.info("Password validation score for '%s': %s", password, score)
 
         # Extract warning and suggestions from feedback
         warning = feedback.get('warning', '')
@@ -565,7 +573,7 @@ class CommonDictionaryWordsValidator:
         log.info("Password validation result for '%s': %s", password, result)
 
         # Raise validation error if score is less than or equal to 3
-        if score <= 3:
+        if score <= DICTIONARY_WORDS_VALIDATOR_SCORE:
             raise ValidationError({
                 'password_policy_violation': json.dumps({
                     'message': _("This password is too similar to a common password and has been blocked for security reasons."),
