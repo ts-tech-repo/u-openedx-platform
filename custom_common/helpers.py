@@ -23,44 +23,6 @@ from opaque_keys.edx.keys import CourseKey
 
 log = logging.getLogger("edx.student")
 
-
-import ast as py_ast
-from mako.lookup import TemplateLookup
-from mako.lexer import Lexer
-
-def get_template_keys(template_name, template_dir):
-    lookup = TemplateLookup(directories=[template_dir])
-    template = lookup.get_template(template_name)
-    parsed = Lexer(
-        template.source,
-        filename=template.filename
-    ).parse()
-
-    keys = set()
-    local_names = set()
-    builtins = set(dir(__builtins__))
-
-    def walk(node):
-        if isinstance(node, Lexer.__module__ if False else ()):
-            pass
-
-        if hasattr(node, "text") and node.__class__.__name__ == "Expression":
-            try:
-                tree = py_ast.parse(node.text, mode="eval")
-                keys.update(
-                    n.id for n in py_ast.walk(tree)
-                    if isinstance(n, py_ast.Name)
-                )
-            except SyntaxError:
-                pass
-
-        for child in getattr(node, "nodes", []):
-            walk(child)
-
-    walk(parsed)
-    return sorted(keys - builtins)
-
-
 def create_user(
     username: str,
     email: str,
