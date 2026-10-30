@@ -172,6 +172,14 @@ class SurveyResponsesExportView(APIView):
         all_questions = []
 
         for survey in surveys:
+            user_email = survey.user.email
+            if exclude_user_list and user_email.lower().endswith(exclude_user_list):
+                log.info(
+                    "Skipping excluded user %s in course %s",
+                    user_email,
+                    course_id,
+                )
+                continue
             metadata = survey.metadata or {}
 
             survey_submit = metadata.get(
