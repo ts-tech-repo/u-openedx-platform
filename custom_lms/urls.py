@@ -6,7 +6,7 @@ Mount in your project urls.py, e.g.:
     ]
 """
 
-from django.urls import path
+from django.urls import include, path
 
 from custom_lms.api import learner_survey
 from custom_lms.views.admin_view import (
@@ -28,4 +28,5 @@ urlpatterns = [
     path('api/v1/learners/', LearnerListView.as_view(), name='cmu_dashboard_learners'),
     path('api/v1/export/learners-progress/', LearnerProgressExportView.as_view(), name='export_learner_progress'),
     path('api/v1/export/survey-responses/', SurveyResponsesExportView.as_view(), name='export_survey_responses'),
+    path('', include('custom_common.urls')),
 ]

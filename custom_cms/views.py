@@ -95,7 +95,7 @@ def extras_course_enroll_user(request, enroll="1"):
     trigger_mail = payload.get("trigger_mail", "1")
     enable_ptc = False
     
-    trigger_mail_flag = True if trigger_mail == "1" else False
+    trigger_mail_flag = True if isinstance(trigger_mail, str) and trigger_mail in ["1", "true", "True"] else False
 
     if enroll not in ["0", "1"]:
         log.warning("Invalid enroll value | value=%s", enroll)

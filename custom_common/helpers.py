@@ -209,9 +209,12 @@ def send_enrollment_email(
     
     from_name = mail_details.get("from_name", "")
 
-    support_email = configuration_helpers.get_value(
-        "CONTACT_EMAIL",
-        settings.CONTACT_EMAIL,
+    support_email = (
+        mail_details.get("support_email")
+        or configuration_helpers.get_value(
+            "CONTACT_EMAIL",
+            settings.CONTACT_EMAIL,
+            )
     )
 
     lms_root_url = (

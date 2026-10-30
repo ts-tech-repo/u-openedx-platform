@@ -39,12 +39,11 @@
 
             <tr>
                 <td><strong>Password:</strong></td>
-                % if password is not None:
+                % if password and password is not None:
                     <td>${password}</td>
                 % else :
                     <td><em>Use your existing credentials to log in.</em></td>
                 % endif
-            </tr>
         </table>
 
         <p>
