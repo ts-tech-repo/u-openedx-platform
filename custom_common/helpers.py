@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 import secrets
@@ -307,8 +308,8 @@ def send_enrollment_email(
 
         payload = {
             "mail_recipient": [user.email],
-            "cc": mail_details.get("cc_addresses", []),
-            "bcc": mail_details.get("bcc_addresses", []),
+            "cc": json.dumps(mail_details.get("cc_addresses", [])),
+            "bcc": json.dumps(mail_details.get("bcc_addresses", [])),
             "subject": subject,
             "mail_content": message,
             "from_email": from_address,
@@ -321,9 +322,10 @@ def send_enrollment_email(
             try:
                 log.info(
                     "Sending enrollment email via Notify API | "
-                    "user_id=%s | attempt=%s",
+                    "user_id=%s | attempt=%s | payload=%s",
                     user.id,
                     attempt,
+                    payload,
                 )
 
                 response = requests.post(
