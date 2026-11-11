@@ -7,13 +7,13 @@ log = logging.getLogger(__name__)
 
 
 class CustomLoginConfig(AppConfig):
-    name = 'lms.djangoapps.custom_login'
+    name = 'custom_lms.djangoapps.custom_login'
 
     def ready(self):
         from .strategy import install
         install()
 
-        step = 'lms.djangoapps.custom_login.pipeline.enforce_expected_email'
+        step = 'custom_lms.djangoapps.custom_login.pipeline.enforce_expected_email'
         anchor = 'social_core.pipeline.social_auth.social_details'
         pipeline = list(getattr(settings, 'SOCIAL_AUTH_PIPELINE', []))
 

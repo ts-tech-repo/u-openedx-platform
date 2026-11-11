@@ -53,7 +53,7 @@ CUSTOM_PASSWORD_FALLBACK_SESSION_KEY = 'custom_login_password_fallback_email'
 # Handled by the stock strategy, never taken from the custom config.
 _STOCK_ONLY_SETTINGS = ('LOGIN_ERROR_URL', 'MAX_SESSION_LENGTH', 'SECRET_KEY')
 
-STRATEGY_PATH = 'lms.djangoapps.custom_login.strategy.CustomConfigurationModelStrategy'
+STRATEGY_PATH = 'custom_lms.djangoapps.custom_login.strategy.CustomConfigurationModelStrategy'
 
 _INSTALLED = False
 
@@ -69,7 +69,7 @@ def get_custom_config_for_backend(backend_name, request=None):
     marker for `backend_name`, or None (-> stock behaviour).
     """
     # Imported here to avoid circular imports at settings/startup time.
-    from lms.djangoapps.custom_login.models import CustomOAuth2ProviderConfig
+    from custom_lms.djangoapps.custom_login.models import CustomOAuth2ProviderConfig
 
     request = request or get_current_request()
     session = getattr(request, 'session', None) if request is not None else None
