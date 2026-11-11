@@ -2398,6 +2398,7 @@ INSTALLED_APPS = [
     # Custom Apps
     "custom_lms",
     "custom_common",
+    "custom_lms.djangoapps.custom_login",
     "c_ptc.apps.CustomPTCConfig",
 ]
 
